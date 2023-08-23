@@ -6,7 +6,7 @@ use super::{Mut, Ref, World, WorldId};
 use crate::{
     archetype::{Archetype, ArchetypeComponentId, Archetypes},
     bundle::Bundles,
-    change_detection::{MutUntyped, Ticks, TicksMut},
+    change_detection::{MutUntyped, Ticks},
     component::{
         ComponentId, ComponentStorage, ComponentTicks, Components, StorageType, Tick, TickCells,
     },
@@ -443,7 +443,7 @@ impl<'w> UnsafeWorldCell<'w> {
         // - index is in-bounds because the column is initialized and non-empty
         // - the caller promises that no other reference to the ticks of the same row can exist at the same time
         let ticks = unsafe {
-            TicksMut::from_tick_cells(ticks, self.last_change_tick(), self.change_tick())
+            Ticks::from_tick_cells_mut(ticks, self.last_change_tick(), self.change_tick())
         };
 
         Some(MutUntyped {
@@ -505,7 +505,7 @@ impl<'w> UnsafeWorldCell<'w> {
             // SAFETY: This function has exclusive access to the world so nothing aliases `ticks`.
             // - index is in-bounds because the column is initialized and non-empty
             // - no other reference to the ticks of the same row can exist at the same time
-            unsafe { TicksMut::from_tick_cells(ticks, self.last_change_tick(), change_tick) };
+            unsafe { Ticks::from_tick_cells_mut(ticks, self.last_change_tick(), change_tick) };
 
         Some(MutUntyped {
             // SAFETY: This function has exclusive access to the world so nothing aliases `ptr`.
@@ -803,7 +803,7 @@ impl<'w> UnsafeEntityCell<'w> {
             .map(|(value, cells)| Mut {
                 // SAFETY: returned component is of type T
                 value: value.assert_unique().deref_mut::<T>(),
-                ticks: TicksMut::from_tick_cells(cells, last_change_tick, change_tick),
+                ticks: Ticks::from_tick_cells_mut(cells, last_change_tick, change_tick),
             })
         }
     }
@@ -863,7 +863,7 @@ impl<'w> UnsafeEntityCell<'w> {
             .map(|(value, cells)| MutUntyped {
                 // SAFETY: world access validated by caller and ties world lifetime to `MutUntyped` lifetime
                 value: value.assert_unique(),
-                ticks: TicksMut::from_tick_cells(
+                ticks: Ticks::from_tick_cells_mut(
                     cells,
                     self.world.last_change_tick(),
                     self.world.change_tick(),

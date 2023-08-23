@@ -14,7 +14,7 @@ pub use world_cell::*;
 use crate::{
     archetype::{ArchetypeComponentId, ArchetypeId, ArchetypeRow, Archetypes},
     bundle::{Bundle, BundleInserter, BundleSpawner, Bundles},
-    change_detection::{MutUntyped, TicksMut},
+    change_detection::{MutUntyped, Ticks},
     component::{Component, ComponentDescriptor, ComponentId, ComponentInfo, Components, Tick},
     entity::{AllocAtWithoutReplacement, Entities, Entity, EntityLocation},
     event::{Event, Events},
@@ -1334,7 +1334,7 @@ impl World {
         let mut value = unsafe { ptr.read::<R>() };
         let value_mut = Mut {
             value: &mut value,
-            ticks: TicksMut {
+            ticks: Ticks {
                 added: &mut ticks.added,
                 changed: &mut ticks.changed,
                 last_run: last_change_tick,
@@ -1904,7 +1904,6 @@ impl<T: Default> FromWorld for T {
 mod tests {
     use super::{FromWorld, World};
     use crate::{
-        change_detection::DetectChangesMut,
         component::{ComponentDescriptor, ComponentInfo, StorageType},
         ptr::OwningPtr,
         system::Resource,

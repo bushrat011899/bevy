@@ -1,6 +1,6 @@
 use crate::{
     archetype::{Archetype, ArchetypeComponentId},
-    change_detection::{Ticks, TicksMut},
+    change_detection::Ticks,
     component::{Component, ComponentId, ComponentStorage, StorageType, Tick},
     entity::Entity,
     query::{Access, DebugCheckedUnwrap, FilteredAccess},
@@ -1008,7 +1008,7 @@ unsafe impl<'__w, T: Component> WorldQuery for &'__w mut T {
                     fetch.table_data.debug_checked_unwrap();
                 Mut {
                     value: table_components.get(table_row.index()).deref_mut(),
-                    ticks: TicksMut {
+                    ticks: Ticks {
                         added: added_ticks.get(table_row.index()).deref_mut(),
                         changed: changed_ticks.get(table_row.index()).deref_mut(),
                         this_run: fetch.this_run,
@@ -1024,7 +1024,7 @@ unsafe impl<'__w, T: Component> WorldQuery for &'__w mut T {
                     .debug_checked_unwrap();
                 Mut {
                     value: component.assert_unique().deref_mut(),
-                    ticks: TicksMut::from_tick_cells(ticks, fetch.last_run, fetch.this_run),
+                    ticks: Ticks::from_tick_cells_mut(ticks, fetch.last_run, fetch.this_run),
                 }
             }
         }

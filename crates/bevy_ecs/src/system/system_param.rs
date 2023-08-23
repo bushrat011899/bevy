@@ -2,7 +2,7 @@ pub use crate::change_detection::{NonSendMut, Res, ResMut};
 use crate::{
     archetype::{Archetype, Archetypes},
     bundle::Bundles,
-    change_detection::{Ticks, TicksMut},
+    change_detection::{Proxy, Ticks},
     component::{ComponentId, ComponentTicks, Components, Tick},
     entity::Entities,
     query::{
@@ -549,7 +549,7 @@ unsafe impl<'a, T: Resource> SystemParam for ResMut<'a, T> {
             });
         ResMut {
             value: value.value.deref_mut::<T>(),
-            ticks: TicksMut {
+            ticks: Ticks {
                 added: value.ticks.added,
                 changed: value.ticks.changed,
                 last_run: system_meta.last_run,
@@ -579,7 +579,7 @@ unsafe impl<'a, T: Resource> SystemParam for Option<ResMut<'a, T>> {
             .get_resource_mut_by_id(component_id)
             .map(|value| ResMut {
                 value: value.value.deref_mut::<T>(),
-                ticks: TicksMut {
+                ticks: Ticks {
                     added: value.ticks.added,
                     changed: value.ticks.changed,
                     last_run: system_meta.last_run,
@@ -980,13 +980,13 @@ impl<'w, T> Deref for NonSend<'w, T> {
 impl<'a, T> From<NonSendMut<'a, T>> for NonSend<'a, T> {
     fn from(nsm: NonSendMut<'a, T>) -> Self {
         Self {
-            value: nsm.value,
+            value: nsm.0.value,
             ticks: ComponentTicks {
-                added: nsm.ticks.added.to_owned(),
-                changed: nsm.ticks.changed.to_owned(),
+                added: nsm.0.ticks.added.to_owned(),
+                changed: nsm.0.ticks.changed.to_owned(),
             },
-            this_run: nsm.ticks.this_run,
-            last_run: nsm.ticks.last_run,
+            this_run: nsm.0.ticks.this_run,
+            last_run: nsm.0.ticks.last_run,
         }
     }
 }
@@ -1128,10 +1128,10 @@ unsafe impl<'a, T: 'static> SystemParam for NonSendMut<'a, T> {
                     std::any::type_name::<T>()
                 )
             });
-        NonSendMut {
+        NonSendMut(Proxy {
             value: ptr.assert_unique().deref_mut(),
-            ticks: TicksMut::from_tick_cells(ticks, system_meta.last_run, change_tick),
-        }
+            ticks: Ticks::from_tick_cells_mut(ticks, system_meta.last_run, change_tick),
+        })
     }
 }
 
@@ -1153,9 +1153,11 @@ unsafe impl<'a, T: 'static> SystemParam for Option<NonSendMut<'a, T>> {
     ) -> Self::Item<'w, 's> {
         world
             .get_non_send_with_ticks(component_id)
-            .map(|(ptr, ticks)| NonSendMut {
-                value: ptr.assert_unique().deref_mut(),
-                ticks: TicksMut::from_tick_cells(ticks, system_meta.last_run, change_tick),
+            .map(|(ptr, ticks)| {
+                NonSendMut(Proxy {
+                    value: ptr.assert_unique().deref_mut(),
+                    ticks: Ticks::from_tick_cells_mut(ticks, system_meta.last_run, change_tick),
+                })
             })
     }
 }
