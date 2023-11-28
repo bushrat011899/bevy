@@ -223,11 +223,12 @@ impl<'w> DeferredWorld<'w> {
         entity: Entity,
         targets: impl Iterator<Item = ComponentId>,
     ) {
+        let mut world = DeferredWorld { world: self.world };
         for component_id in targets {
             // SAFETY: Caller ensures that these components exist
-            let hooks = unsafe { self.components().get_info_unchecked(component_id) }.hooks();
-            if let Some(hook) = hooks.on_add {
-                hook(DeferredWorld { world: self.world }, entity, component_id);
+            let info = unsafe { self.components().get_info_unchecked(component_id) };
+            for hook in &info.hooks().on_add {
+                hook(&mut world, entity, component_id);
             }
         }
     }
@@ -242,11 +243,12 @@ impl<'w> DeferredWorld<'w> {
         entity: Entity,
         targets: impl Iterator<Item = ComponentId>,
     ) {
+        let mut world = DeferredWorld { world: self.world };
         for component_id in targets {
             // SAFETY: Caller ensures that these components exist
-            let hooks = unsafe { self.world.components().get_info_unchecked(component_id) }.hooks();
-            if let Some(hook) = hooks.on_insert {
-                hook(DeferredWorld { world: self.world }, entity, component_id);
+            let info = unsafe { self.components().get_info_unchecked(component_id) };
+            for hook in &info.hooks().on_insert {
+                hook(&mut world, entity, component_id);
             }
         }
     }
@@ -261,11 +263,12 @@ impl<'w> DeferredWorld<'w> {
         entity: Entity,
         targets: impl Iterator<Item = ComponentId>,
     ) {
+        let mut world = DeferredWorld { world: self.world };
         for component_id in targets {
             // SAFETY: Caller ensures that these components exist
-            let hooks = unsafe { self.world.components().get_info_unchecked(component_id) }.hooks();
-            if let Some(hook) = hooks.on_remove {
-                hook(DeferredWorld { world: self.world }, entity, component_id);
+            let info = unsafe { self.components().get_info_unchecked(component_id) };
+            for hook in &info.hooks().on_remove {
+                hook(&mut world, entity, component_id);
             }
         }
     }

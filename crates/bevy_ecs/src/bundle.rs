@@ -1139,11 +1139,11 @@ mod tests {
         world.init_resource::<R>();
         world
             .register_component::<A>()
-            .on_add(|mut world, _, _| {
+            .on_add(|world, _, _| {
                 world.resource_mut::<R>().assert_order(0);
             })
-            .on_insert(|mut world, _, _| world.resource_mut::<R>().assert_order(1))
-            .on_remove(|mut world, _, _| world.resource_mut::<R>().assert_order(2));
+            .on_insert(|world, _, _| world.resource_mut::<R>().assert_order(1))
+            .on_remove(|world, _, _| world.resource_mut::<R>().assert_order(2));
 
         let entity = world.spawn(A).id();
         world.despawn(entity);
@@ -1156,13 +1156,13 @@ mod tests {
         world.init_resource::<R>();
         world
             .register_component::<A>()
-            .on_add(|mut world, _, _| {
+            .on_add(|world, _, _| {
                 world.resource_mut::<R>().assert_order(0);
             })
-            .on_insert(|mut world, _, _| {
+            .on_insert(|world, _, _| {
                 world.resource_mut::<R>().assert_order(1);
             })
-            .on_remove(|mut world, _, _| {
+            .on_remove(|world, _, _| {
                 world.resource_mut::<R>().assert_order(2);
             });
 
@@ -1179,14 +1179,14 @@ mod tests {
         world.init_resource::<R>();
         world
             .register_component::<A>()
-            .on_add(|mut world, entity, _| {
+            .on_add(|world, entity, _| {
                 world.resource_mut::<R>().assert_order(0);
 
                 world.with_commands(|mut commands| {
                     commands.entity(entity).insert(B);
                 });
             })
-            .on_remove(|mut world, entity, _| {
+            .on_remove(|world, entity, _| {
                 world.resource_mut::<R>().assert_order(2);
 
                 world.with_commands(|mut commands| {
@@ -1196,14 +1196,14 @@ mod tests {
 
         world
             .register_component::<B>()
-            .on_add(|mut world, entity, _| {
+            .on_add(|world, entity, _| {
                 world.resource_mut::<R>().assert_order(1);
 
                 world.with_commands(|mut commands| {
                     commands.entity(entity).remove::<A>();
                 });
             })
-            .on_remove(|mut world, _, _| {
+            .on_remove(|world, _, _| {
                 world.resource_mut::<R>().assert_order(3);
             });
 
@@ -1220,7 +1220,7 @@ mod tests {
         world.init_resource::<R>();
         world
             .register_component::<A>()
-            .on_add(|mut world, entity, _| {
+            .on_add(|world, entity, _| {
                 world.resource_mut::<R>().assert_order(0);
                 world.with_commands(|mut commands| {
                     commands.entity(entity).insert(B).insert(D);
@@ -1229,18 +1229,18 @@ mod tests {
 
         world
             .register_component::<B>()
-            .on_add(|mut world, entity, _| {
+            .on_add(|world, entity, _| {
                 world.resource_mut::<R>().assert_order(1);
                 world.with_commands(|mut commands| {
                     commands.entity(entity).insert(C);
                 });
             });
 
-        world.register_component::<C>().on_add(|mut world, _, _| {
+        world.register_component::<C>().on_add(|world, _, _| {
             world.resource_mut::<R>().assert_order(2);
         });
 
-        world.register_component::<D>().on_add(|mut world, _, _| {
+        world.register_component::<D>().on_add(|world, _, _| {
             world.resource_mut::<R>().assert_order(3);
         });
 

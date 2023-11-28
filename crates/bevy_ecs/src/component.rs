@@ -204,14 +204,14 @@ pub enum StorageType {
 }
 
 /// The type used for [`Component`] lifecycle hooks such as `on_add`, `on_insert` or `on_remove`
-pub type ComponentHook = for<'w> fn(DeferredWorld<'w>, Entity, ComponentId);
+pub type ComponentHook = for<'a, 'w> fn(&'a mut DeferredWorld<'w>, Entity, ComponentId);
 
 /// Lifecycle hooks for a given [`Component`], stored in it's [`ComponentInfo`]
 #[derive(Debug, Clone, Default)]
 pub struct ComponentHooks {
-    pub(crate) on_add: Option<ComponentHook>,
-    pub(crate) on_insert: Option<ComponentHook>,
-    pub(crate) on_remove: Option<ComponentHook>,
+    pub(crate) on_add: Vec<ComponentHook>,
+    pub(crate) on_insert: Vec<ComponentHook>,
+    pub(crate) on_remove: Vec<ComponentHook>,
 }
 
 /// Stores metadata for a type of component or resource stored in a specific [`World`].
@@ -286,12 +286,7 @@ impl ComponentInfo {
     ///
     /// Will panic if the component already has an `on_add` hook
     pub fn on_add(&mut self, hook: ComponentHook) -> &mut Self {
-        assert!(
-            self.hooks.on_add.is_none(),
-            "Component id: {:?}, already has an on_add hook",
-            self.id()
-        );
-        self.hooks.on_add = Some(hook);
+        self.hooks.on_add.push(hook);
         self
     }
 
@@ -299,12 +294,7 @@ impl ComponentInfo {
     ///
     /// Will panic if the component already has an `on_insert` hook
     pub fn on_insert(&mut self, hook: ComponentHook) -> &mut Self {
-        assert!(
-            self.hooks.on_insert.is_none(),
-            "Component id: {:?}, already has an on_insert hook",
-            self.id()
-        );
-        self.hooks.on_insert = Some(hook);
+        self.hooks.on_insert.push(hook);
         self
     }
 
@@ -312,25 +302,20 @@ impl ComponentInfo {
     ///
     /// Will panic if the component already has an `on_remove` hook
     pub fn on_remove(&mut self, hook: ComponentHook) -> &mut Self {
-        assert!(
-            self.hooks.on_remove.is_none(),
-            "Component id: {:?}, already has an on_remove hook",
-            self.id()
-        );
-        self.hooks.on_remove = Some(hook);
+        self.hooks.on_remove.push(hook);
         self
     }
 
     /// Update the given flags to include any [`ComponentHook`] registered to self
     #[inline]
     pub(crate) fn update_archetype_flags(&self, flags: &mut ArchetypeFlags) {
-        if self.hooks().on_add.is_some() {
+        if !self.hooks().on_add.is_empty() {
             flags.insert(ArchetypeFlags::ON_ADD_HOOK);
         }
-        if self.hooks().on_insert.is_some() {
+        if !self.hooks().on_insert.is_empty() {
             flags.insert(ArchetypeFlags::ON_INSERT_HOOK);
         }
-        if self.hooks().on_remove.is_some() {
+        if !self.hooks().on_remove.is_empty() {
             flags.insert(ArchetypeFlags::ON_REMOVE_HOOK);
         }
     }

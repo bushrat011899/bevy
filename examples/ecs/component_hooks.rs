@@ -36,7 +36,7 @@ fn setup(world: &mut World) {
         // - the component id of the triggering component, this is mostly used for dynamic components
         //
         // `on_add` will trigger when a component is inserted onto an entity without it
-        .on_add(|mut world, entity, component_id| {
+        .on_add(|world, entity, component_id| {
             // You can access component data from within the hook
             let value = world.get::<MyComponent>(entity).unwrap().0;
             println!(
@@ -57,7 +57,7 @@ fn setup(world: &mut World) {
         })
         // `on_remove` will trigger when a component is removed from an entity,
         // since it runs before the component is removed you can still access the component data
-        .on_remove(|mut world, entity, component_id| {
+        .on_remove(|world, entity, component_id| {
             let value = world.get::<MyComponent>(entity).unwrap().0;
             println!(
                 "Component: {:?} removed from: {:?} with value {:?}",
