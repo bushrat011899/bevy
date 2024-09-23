@@ -2,6 +2,9 @@
 //!
 //! This module contains the [`Bundle`] trait and some other helper types.
 
+use alloc::boxed::Box;
+use alloc::vec;
+use alloc::vec::Vec;
 pub use bevy_ecs_macros::Bundle;
 
 use crate::{

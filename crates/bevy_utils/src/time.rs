@@ -46,7 +46,13 @@ mod no_std {
         ///
         /// The provided duration must _always_ be equal to or greater than the current
         /// value to preserve `Instant`'s monotonicity guarantees.
-        pub unsafe fn update(duration: Duration) {}
+        pub unsafe fn update(duration: Duration) {
+            let seconds = duration.as_secs();
+            let subsecond_nanos = duration.subsec_nanos();
+
+            SECONDS.store(seconds, Ordering::Relaxed);
+            SUBSECOND_NANOS.store(subsecond_nanos, Ordering::Relaxed);
+        }
 
         /// Returns the amount of time elapsed from another instant to this one,
         /// or zero duration if that instant is later than this one.

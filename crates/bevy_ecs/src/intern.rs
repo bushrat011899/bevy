@@ -5,8 +5,15 @@
 //! and make comparisons for any type as fast as integers.
 
 use core::{fmt::Debug, hash::Hash, ops::Deref};
+
+#[cfg(feature = "std")]
 use std::sync::{OnceLock, PoisonError, RwLock};
 
+#[cfg(not(feature = "std"))]
+use spin::{Once as OnceLock, RwLock};
+
+use alloc::borrow::ToOwned;
+use alloc::boxed::Box;
 use bevy_utils::HashSet;
 
 /// An interned value. Will stay valid until the end of the program and will not drop.
@@ -137,15 +144,32 @@ impl<T: Internable + ?Sized> Interner<T> {
     /// [`Interned<T>`] using the obtained static reference. Subsequent calls for the same `value`
     /// will return [`Interned<T>`] using the same static reference.
     pub fn intern(&self, value: &T) -> Interned<T> {
+        #[cfg(feature = "std")]
         let lock = self.0.get_or_init(Default::default);
+
+        #[cfg(not(feature = "std"))]
+        let lock = self.0.call_once(Default::default);
+
         {
-            let set = lock.read().unwrap_or_else(PoisonError::into_inner);
+            let set = lock.read();
+
+            #[cfg(feature = "std")]
+            let set = set.unwrap_or_else(PoisonError::into_inner);
+
             if let Some(value) = set.get(value) {
                 return Interned(*value);
             }
         }
+
         {
-            let mut set = lock.write().unwrap_or_else(PoisonError::into_inner);
+            let set = lock.write();
+
+            #[cfg(feature = "std")]
+            let mut set = set.unwrap_or_else(PoisonError::into_inner);
+
+            #[cfg(not(feature = "std"))]
+            let mut set = set;
+
             if let Some(value) = set.get(value) {
                 Interned(*value)
             } else {

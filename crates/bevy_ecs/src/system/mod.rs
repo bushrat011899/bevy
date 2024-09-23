@@ -118,6 +118,7 @@ mod system_param;
 mod system_registry;
 
 use alloc::borrow::Cow;
+use alloc::format;
 use core::any::TypeId;
 
 pub use adapter_system::*;

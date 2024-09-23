@@ -5,6 +5,8 @@ use crate::{
     world::{Command, DeferredWorld, World},
 };
 
+use alloc::vec::Vec;
+
 /// A [`Command`] that emits a given trigger for a given set of targets.
 pub struct TriggerEvent<E, Targets: TriggerTargets = ()> {
     /// The event to trigger.

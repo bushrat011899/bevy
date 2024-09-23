@@ -10,6 +10,7 @@ use crate::{
     system::{input::SystemInput, SystemIn},
     world::unsafe_world_cell::UnsafeWorldCell,
 };
+use alloc::vec::Vec;
 
 use super::{ReadOnlySystem, System};
 

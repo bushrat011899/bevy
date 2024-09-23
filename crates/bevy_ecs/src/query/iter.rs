@@ -6,6 +6,7 @@ use crate::{
     storage::{Table, TableRow, Tables},
     world::unsafe_world_cell::UnsafeWorldCell,
 };
+use alloc::vec::Vec;
 use core::{
     borrow::Borrow,
     cmp::Ordering,

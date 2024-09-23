@@ -6,6 +6,9 @@ use bevy_ecs::{
     system::{SystemId, SystemInput},
 };
 
+use alloc::boxed::Box;
+use alloc::string::String;
+use alloc::vec::Vec;
 #[cfg(feature = "trace")]
 use bevy_utils::tracing::info_span;
 use bevy_utils::{HashMap, HashSet};

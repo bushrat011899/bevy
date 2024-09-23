@@ -8,6 +8,8 @@ pub mod error;
 mod identifier;
 mod spawn_batch;
 pub mod unsafe_world_cell;
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 
 #[cfg(feature = "bevy_reflect")]
 pub mod reflect;

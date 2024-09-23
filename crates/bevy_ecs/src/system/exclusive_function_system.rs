@@ -9,6 +9,8 @@ use crate::{
     },
     world::{unsafe_world_cell::UnsafeWorldCell, World},
 };
+use alloc::vec;
+use alloc::vec::Vec;
 
 use alloc::borrow::Cow;
 use bevy_utils::all_tuples;

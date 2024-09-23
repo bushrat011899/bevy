@@ -12,6 +12,8 @@ use crate::{
 };
 
 use alloc::borrow::Cow;
+use alloc::vec;
+use alloc::vec::Vec;
 use bevy_utils::all_tuples;
 use core::marker::PhantomData;
 

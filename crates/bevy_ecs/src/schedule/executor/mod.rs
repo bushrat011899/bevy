@@ -1,12 +1,14 @@
+#[cfg(feature = "multi_threaded")]
 mod multi_threaded;
 mod simple;
 mod single_threaded;
 
-pub use self::{
-    multi_threaded::{MainThreadExecutor, MultiThreadedExecutor},
-    simple::SimpleExecutor,
-    single_threaded::SingleThreadedExecutor,
-};
+use alloc::vec::Vec;
+
+#[cfg(feature = "multi_threaded")]
+pub use self::multi_threaded::{MainThreadExecutor, MultiThreadedExecutor};
+
+pub use self::{simple::SimpleExecutor, single_threaded::SingleThreadedExecutor};
 
 use fixedbitset::FixedBitSet;
 
@@ -46,6 +48,7 @@ pub enum ExecutorKind {
     /// immediately after running each system.
     Simple,
     /// Runs the schedule using a thread pool. Non-conflicting systems can run in parallel.
+    #[cfg(all(not(target_arch = "wasm32"), feature = "multi_threaded"))]
     #[cfg_attr(all(not(target_arch = "wasm32"), feature = "multi_threaded"), default)]
     MultiThreaded,
 }

@@ -9,6 +9,8 @@ use crate::{
     },
     world::{FromWorld, World},
 };
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 use core::fmt::Debug;
 
 use super::{init_query_param, Res, ResMut, Resource, SystemState};

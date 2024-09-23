@@ -1,4 +1,6 @@
 use crate::{App, Plugin};
+use alloc::vec;
+use alloc::vec::Vec;
 use bevy_ecs::{
     schedule::{
         ExecutorKind, InternedScheduleLabel, IntoSystemSetConfigs, Schedule, ScheduleLabel,

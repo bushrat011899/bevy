@@ -121,7 +121,10 @@ impl Plugin for ScheduleRunnerPlugin {
                     {
                         loop {
                             match tick(&mut app, wait) {
-                                Ok(Some(delay)) => std::thread::sleep(delay),
+                                Ok(Some(delay)) => {
+                                    #[cfg(feature = "std")]
+                                    std::thread::sleep(delay);
+                                }
                                 Ok(None) => continue,
                                 Err(exit) => return exit,
                             }

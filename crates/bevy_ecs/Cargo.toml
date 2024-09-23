@@ -8,34 +8,40 @@ repository = "https://github.com/bevyengine/bevy"
 license = "MIT OR Apache-2.0"
 keywords = ["ecs", "game", "bevy"]
 categories = ["game-engines", "data-structures"]
-rust-version = "1.77.0"
+rust-version = "1.81.0"
 
 [features]
-default = ["bevy_reflect"]
+default = ["std", "bevy_reflect"]
+std = ["bevy_tasks/std", "bevy_utils/std", "arrayvec?/std", "nonmax/std", "serde?/std", "fixedbitset/std", "concurrent-queue/std", "bitflags/std", "thiserror/std", "indexmap/std", "disqualified/alloc"]
 trace = []
-multi_threaded = ["bevy_tasks/multi_threaded", "arrayvec"]
-bevy_debug_stepping = []
+multi_threaded = ["std", "bevy_tasks/multi_threaded", "arrayvec"]
+bevy_debug_stepping = ["std"]
 serialize = ["dep:serde"]
-track_change_detection = []
+track_change_detection = ["std"]
+bevy_reflect = ["std", "dep:bevy_reflect"]
 reflect_functions = ["bevy_reflect", "bevy_reflect/functions"]
 
 [dependencies]
 bevy_ptr = { path = "../bevy_ptr", version = "0.15.0-dev" }
 bevy_reflect = { path = "../bevy_reflect", version = "0.15.0-dev", optional = true }
-bevy_tasks = { path = "../bevy_tasks", version = "0.15.0-dev" }
-bevy_utils = { path = "../bevy_utils", version = "0.15.0-dev" }
+bevy_tasks = { path = "../bevy_tasks", version = "0.15.0-dev", default-features = false }
+bevy_utils = { path = "../bevy_utils", version = "0.15.0-dev", default-features = false, features = ["alloc"] }
 bevy_ecs_macros = { path = "macros", version = "0.15.0-dev" }
 
-petgraph = "0.6"
 bitflags = "2.3"
-concurrent-queue = "2.4.0"
-disqualified = "1.0"
-fixedbitset = "0.5"
+concurrent-queue = { version = "2.4.0", default-features = false }
+disqualified = { version = "1.0", default-features = false }
+fixedbitset = { version = "0.5", default-features = false }
 serde = { version = "1", optional = true, default-features = false }
-thiserror = "1.0"
-nonmax = "0.5"
-arrayvec = { version = "0.7.4", optional = true }
+thiserror = { git = "https://github.com/quartiq/thiserror", rev = "515bd36da54dbc346250026ddc349c88851e4bb1", default-features = false }
+nonmax = { version = "0.5", default-features = false }
+arrayvec = { version = "0.7.4", optional = true, default-features = false }
 smallvec = "1"
+spin = { version = "0.9.8", default-features = false, features = [
+  "rwlock",
+  "once",
+] }
+indexmap = { version = "2.5.0", default-features = false }
 
 [dev-dependencies]
 rand = "0.8"

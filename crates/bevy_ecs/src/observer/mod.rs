@@ -1,5 +1,7 @@
 //! Types for creating and storing [`Observer`]s
 
+use alloc::vec::Vec;
+
 mod entity_observer;
 mod runner;
 mod trigger_event;

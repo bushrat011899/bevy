@@ -1,3 +1,4 @@
+#[cfg(feature = "std")]
 mod parallel_scope;
 
 use core::{marker::PhantomData, panic::Location};
@@ -19,9 +20,12 @@ use crate::{
         EntityWorldMut, FromWorld, SpawnBatchIter, World,
     },
 };
+use alloc::vec::Vec;
 use bevy_ptr::OwningPtr;
 use bevy_utils::tracing::{error, info};
-pub use parallel_scope::*;
+
+#[cfg(feature = "std")]
+pub use parallel_scope::ParallelCommands;
 
 /// A [`Command`] queue to perform structural changes to the [`World`].
 ///

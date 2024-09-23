@@ -7,6 +7,8 @@ use core::{
     ptr::{addr_of_mut, NonNull},
 };
 
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 use bevy_ptr::{OwningPtr, Unaligned};
 use bevy_utils::tracing::warn;
 
@@ -262,7 +264,8 @@ impl RawCommandQueue {
                     self.bytes.as_mut().as_mut_ptr().add(local_cursor).cast(),
                 ))
             };
-            let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
+
+            let f = AssertUnwindSafe(|| {
                 // SAFETY: The data underneath the cursor must correspond to the type erased in metadata,
                 // since they were stored next to each other by `.push()`.
                 // For ZSTs, the type doesn't matter as long as the pointer is non-null.
@@ -270,9 +273,10 @@ impl RawCommandQueue {
                 // At this point, it will either point to the next `CommandMeta`,
                 // or the cursor will be out of bounds and the loop will end.
                 unsafe { (meta.consume_command_and_get_size)(cmd, world, &mut local_cursor) };
-            }));
+            });
 
-            if let Err(payload) = result {
+            #[cfg(feature = "std")]
+            if let Err(payload) = std::panic::catch_unwind(f) {
                 // local_cursor now points to the location _after_ the panicked command.
                 // Add the remaining commands that _would have_ been applied to the
                 // panic_recovery queue.
@@ -297,6 +301,9 @@ impl RawCommandQueue {
                 }
                 std::panic::resume_unwind(payload);
             }
+
+            #[cfg(not(feature = "std"))]
+            (f)();
         }
 
         // Reset the buffer: all commands past the original `start` cursor have been applied.

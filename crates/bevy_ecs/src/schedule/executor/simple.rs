@@ -103,13 +103,18 @@ impl SystemExecutor for SimpleExecutor {
                 continue;
             }
 
-            let res = std::panic::catch_unwind(AssertUnwindSafe(|| {
+            let f = AssertUnwindSafe(|| {
                 __rust_begin_short_backtrace::run(&mut **system, world);
-            }));
-            if let Err(payload) = res {
+            });
+
+            #[cfg(feature = "std")]
+            if let Err(payload) = std::panic::catch_unwind(f) {
                 eprintln!("Encountered a panic in system `{}`!", &*system.name());
                 std::panic::resume_unwind(payload);
             }
+
+            #[cfg(not(feature = "std"))]
+            (f)();
         }
 
         self.evaluated_sets.clear();

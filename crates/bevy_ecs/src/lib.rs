@@ -9,6 +9,7 @@
     html_logo_url = "https://bevyengine.org/assets/icon.png",
     html_favicon_url = "https://bevyengine.org/assets/icon.png"
 )]
+#![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(target_pointer_width = "16")]
 compile_error!("bevy_ecs cannot safely compile for a 16-bit platform.");
@@ -58,7 +59,7 @@ pub mod prelude {
         },
         system::{
             Commands, Deferred, EntityCommand, EntityCommands, In, InMut, InRef, IntoSystem, Local,
-            NonSend, NonSendMut, ParallelCommands, ParamSet, Query, ReadOnlySystem, Res, ResMut,
+            NonSend, NonSendMut, ParamSet, Query, ReadOnlySystem, Res, ResMut,
             Resource, System, SystemIn, SystemInput, SystemParamBuilder, SystemParamFunction,
         },
         world::{
@@ -66,6 +67,10 @@ pub mod prelude {
             OnReplace, World,
         },
     };
+
+    #[doc(hidden)]
+    #[cfg(feature = "std")]
+    pub use crate::system::ParallelCommands;
 
     #[doc(hidden)]
     #[cfg(feature = "bevy_reflect")]
@@ -77,6 +82,10 @@ pub mod prelude {
     #[cfg(feature = "reflect_functions")]
     pub use crate::reflect::AppFunctionRegistry;
 }
+
+// Re-exported for use within various macros.
+#[doc(hidden)]
+pub use alloc::boxed::Box;
 
 #[cfg(test)]
 mod tests {

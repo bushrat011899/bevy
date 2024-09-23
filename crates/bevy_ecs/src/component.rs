@@ -10,6 +10,7 @@ use crate::{
     system::{Local, Resource, SystemParam},
     world::{DeferredWorld, FromWorld, World},
 };
+use alloc::vec::Vec;
 use alloc::{borrow::Cow, sync::Arc};
 pub use bevy_ecs_macros::Component;
 use bevy_ptr::{OwningPtr, UnsafeCellDeref};

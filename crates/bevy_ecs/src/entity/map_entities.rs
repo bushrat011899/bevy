@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+
 use crate::{
     entity::Entity,
     identifier::masks::{IdentifierMask, HIGH_MASK},

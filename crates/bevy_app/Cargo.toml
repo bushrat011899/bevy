@@ -11,28 +11,29 @@ keywords = ["bevy"]
 [features]
 trace = []
 bevy_debug_stepping = []
-default = ["bevy_reflect"]
-bevy_reflect = ["dep:bevy_reflect", "bevy_ecs/bevy_reflect"]
+default = ["bevy_reflect", "std", "bevy_ecs/default", "bevy_ecs/default", "bevy_utils/default", "bevy_tasks/default"]
+bevy_reflect = ["std", "dep:bevy_reflect", "bevy_ecs/bevy_reflect"]
 reflect_functions = [
   "bevy_reflect",
   "bevy_reflect/functions",
   "bevy_ecs/reflect_functions",
 ]
+std = ["bevy_ecs/std", "bevy_utils/std", "bevy_tasks/std", "thiserror/std", "downcast-rs/std", "dep:ctrlc"]
 
 [dependencies]
 # bevy
 bevy_derive = { path = "../bevy_derive", version = "0.15.0-dev" }
 bevy_ecs = { path = "../bevy_ecs", version = "0.15.0-dev", default-features = false }
 bevy_reflect = { path = "../bevy_reflect", version = "0.15.0-dev", optional = true }
-bevy_utils = { path = "../bevy_utils", version = "0.15.0-dev" }
-bevy_tasks = { path = "../bevy_tasks", version = "0.15.0-dev" }
+bevy_utils = { path = "../bevy_utils", version = "0.15.0-dev", default-features = false }
+bevy_tasks = { path = "../bevy_tasks", version = "0.15.0-dev", default-features = false }
 
 # other
-downcast-rs = "1.2.0"
-thiserror = "1.0"
+downcast-rs = { version = "1.2.0", default-features = false }
+thiserror = { git = "https://github.com/quartiq/thiserror", rev = "515bd36da54dbc346250026ddc349c88851e4bb1", default-features = false }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-ctrlc = "3.4.4"
+ctrlc = { version = "3.4.4" , optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = { version = "0.2" }

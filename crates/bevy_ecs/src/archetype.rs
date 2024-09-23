@@ -26,6 +26,8 @@ use crate::{
     observer::Observers,
     storage::{ImmutableSparseSet, SparseArray, SparseSet, SparseSetIndex, TableId, TableRow},
 };
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 use bevy_utils::HashMap;
 use core::{
     hash::Hash,

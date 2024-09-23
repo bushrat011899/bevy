@@ -4,10 +4,12 @@ use crate::{
     component::{ComponentId, ComponentTicks, Components, Tick, TickCells},
     storage::{blob_vec::BlobVec, SparseSet},
 };
+use alloc::string::String;
 use bevy_ptr::{OwningPtr, Ptr, UnsafeCellDeref};
 #[cfg(feature = "track_change_detection")]
 use core::panic::Location;
 use core::{cell::UnsafeCell, mem::ManuallyDrop};
+#[cfg(feature = "std")]
 use std::thread::ThreadId;
 
 /// The type-erased backing storage and metadata for a single resource within a [`World`].
@@ -21,6 +23,7 @@ pub struct ResourceData<const SEND: bool> {
     changed_ticks: UnsafeCell<Tick>,
     type_name: String,
     id: ArchetypeComponentId,
+    #[cfg(feature = "std")]
     origin_thread_id: Option<ThreadId>,
     #[cfg(feature = "track_change_detection")]
     changed_by: UnsafeCell<&'static Location<'static>>,
@@ -35,6 +38,7 @@ impl<const SEND: bool> Drop for ResourceData<SEND> {
             // If this thread is already panicking, panicking again will cause
             // the entire process to abort. In this case we choose to avoid
             // dropping or checking this altogether and just leak the column.
+            #[cfg(feature = "std")]
             if std::thread::panicking() {
                 return;
             }
@@ -63,6 +67,7 @@ impl<const SEND: bool> ResourceData<SEND> {
         if SEND {
             return;
         }
+        #[cfg(feature = "std")]
         if self.origin_thread_id != Some(std::thread::current().id()) {
             // Panic in tests, as testing for aborting is nearly impossible
             panic!(
@@ -182,6 +187,7 @@ impl<const SEND: bool> ResourceData<SEND> {
                 self.data.replace_unchecked(Self::ROW, value);
             }
         } else {
+            #[cfg(feature = "std")]
             if !SEND {
                 self.origin_thread_id = Some(std::thread::current().id());
             }
@@ -220,6 +226,7 @@ impl<const SEND: bool> ResourceData<SEND> {
                 self.data.replace_unchecked(Self::ROW, value);
             }
         } else {
+            #[cfg(feature = "std")]
             if !SEND {
                 self.origin_thread_id = Some(std::thread::current().id());
             }
@@ -373,6 +380,7 @@ impl<const SEND: bool> Resources<SEND> {
                 changed_ticks: UnsafeCell::new(Tick::new(0)),
                 type_name: String::from(component_info.name()),
                 id: f(),
+                #[cfg(feature = "std")]
                 origin_thread_id: None,
                 #[cfg(feature = "track_change_detection")]
                 changed_by: UnsafeCell::new(Location::caller())

@@ -4,6 +4,8 @@ use crate::{
     entity::Entity,
     storage::{Column, TableRow},
 };
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 use bevy_ptr::{OwningPtr, Ptr};
 #[cfg(feature = "track_change_detection")]
 use core::panic::Location;

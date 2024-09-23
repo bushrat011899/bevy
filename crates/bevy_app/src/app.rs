@@ -2,6 +2,10 @@ use crate::{
     First, Main, MainSchedulePlugin, PlaceholderPlugin, Plugin, Plugins, PluginsState, SubApp,
     SubApps,
 };
+use alloc::boxed::Box;
+use alloc::string::String;
+use alloc::string::ToString;
+use alloc::vec::Vec;
 pub use bevy_derive::AppLabel;
 use bevy_ecs::{
     event::{event_update_system, EventCursor},
@@ -14,6 +18,7 @@ use bevy_ecs::{
 use bevy_utils::tracing::info_span;
 use bevy_utils::{tracing::debug, HashMap};
 use core::{fmt::Debug, num::NonZero, panic::AssertUnwindSafe};
+#[cfg(feature = "std")]
 use std::{
     panic::{catch_unwind, resume_unwind},
     process::{ExitCode, Termination},
@@ -457,12 +462,21 @@ impl App {
             .push(Box::new(PlaceholderPlugin));
 
         self.main_mut().plugin_build_depth += 1;
-        let result = catch_unwind(AssertUnwindSafe(|| plugin.build(self)));
+
+        let f = AssertUnwindSafe(|| plugin.build(self));
+
+        #[cfg(feature = "std")]
+        let result = catch_unwind(f);
+
+        #[cfg(not(feature = "std"))]
+        (f)();
+
         self.main_mut()
             .plugin_names
             .insert(plugin.name().to_string());
         self.main_mut().plugin_build_depth -= 1;
 
+        #[cfg(feature = "std")]
         if let Err(payload) = result {
             resume_unwind(payload);
         }
@@ -1103,6 +1117,7 @@ impl From<u8> for AppExit {
     }
 }
 
+#[cfg(feature = "std")]
 impl Termination for AppExit {
     fn report(self) -> ExitCode {
         match self {

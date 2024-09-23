@@ -12,6 +12,7 @@ use crate::{
     system::IntoObserverSystem,
     world::{DeferredWorld, Mut, World},
 };
+use alloc::vec::Vec;
 use bevy_ptr::{OwningPtr, Ptr};
 use core::{any::TypeId, marker::PhantomData};
 use thiserror::Error;

@@ -1,4 +1,6 @@
 use crate::storage::SparseSetIndex;
+use alloc::vec;
+use alloc::vec::Vec;
 use core::{fmt, fmt::Debug, marker::PhantomData};
 use fixedbitset::FixedBitSet;
 

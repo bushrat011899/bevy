@@ -1,5 +1,6 @@
 //! Provides additional functionality for [`World`] when the `bevy_reflect` feature is enabled.
 
+use alloc::string::String;
 use core::any::TypeId;
 
 use thiserror::Error;

@@ -7,6 +7,7 @@ use crate::{
     system::{BoxedSystem, IntoSystem, System, SystemIn},
     world::{Command, World},
 };
+use alloc::boxed::Box;
 use bevy_ecs_macros::{Component, Resource};
 use thiserror::Error;
 

@@ -3,6 +3,7 @@ use crate::{
     entity::{Entity, EntityHashMap, MapEntities, SceneEntityMapper},
     world::World,
 };
+use alloc::vec::Vec;
 use bevy_reflect::FromType;
 
 /// For a specific type of component, this maps any fields with values of type [`Entity`] to a new world.

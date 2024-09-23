@@ -110,7 +110,7 @@ impl SystemExecutor for SingleThreadedExecutor {
                 continue;
             }
 
-            let res = std::panic::catch_unwind(AssertUnwindSafe(|| {
+            let f = AssertUnwindSafe(|| {
                 if system.is_exclusive() {
                     __rust_begin_short_backtrace::run(&mut **system, world);
                 } else {
@@ -121,11 +121,17 @@ impl SystemExecutor for SingleThreadedExecutor {
                     // update_archetype_component_access is being called immediately before this.
                     unsafe { __rust_begin_short_backtrace::run_unsafe(&mut **system, world) };
                 }
-            }));
-            if let Err(payload) = res {
+            });
+
+            #[cfg(feature = "std")]
+            if let Err(payload) = std::panic::catch_unwind(f) {
                 eprintln!("Encountered a panic in system `{}`!", &*system.name());
                 std::panic::resume_unwind(payload);
             }
+
+            #[cfg(not(feature = "std"))]
+            (f)();
+
             self.unapplied_systems.insert(system_index);
         }
 

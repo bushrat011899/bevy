@@ -1,4 +1,4 @@
-use alloc::borrow::Cow;
+use alloc::{borrow::Cow, vec::Vec};
 
 use super::{ReadOnlySystem, System};
 use crate::{

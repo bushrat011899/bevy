@@ -1,4 +1,6 @@
+use alloc::boxed::Box;
 use alloc::sync::Arc;
+use alloc::vec::Vec;
 use core::any::Any;
 use std::sync::{Mutex, MutexGuard};
 
@@ -278,6 +280,8 @@ impl<'scope, 'env: 'scope, 'sys> Context<'scope, 'env, 'sys> {
             .system_completion
             .push(SystemResult { system_index })
             .unwrap_or_else(|error| unreachable!("{}", error));
+
+        #[cfg(feature = "std")]
         if let Err(payload) = res {
             eprintln!("Encountered a panic in system `{}`!", &*system.name());
             // set the payload to propagate the error
@@ -286,6 +290,7 @@ impl<'scope, 'env: 'scope, 'sys> Context<'scope, 'env, 'sys> {
                 *panic_payload = Some(payload);
             }
         }
+
         self.tick_executor();
     }
 
@@ -718,16 +723,21 @@ fn apply_deferred(
     for system_index in unapplied_systems.ones() {
         // SAFETY: none of these systems are running, no other references exist
         let system = unsafe { &mut *systems[system_index].get() };
-        let res = std::panic::catch_unwind(AssertUnwindSafe(|| {
+        let f = AssertUnwindSafe(|| {
             system.apply_deferred(world);
-        }));
-        if let Err(payload) = res {
+        });
+
+        #[cfg(feature = "std")]
+        if let Err(payload) = std::panic::catch_unwind(f) {
             eprintln!(
                 "Encountered a panic when applying buffers for system `{}`!",
                 &*system.name()
             );
             return Err(payload);
         }
+
+        #[cfg(not(feature = "std"))]
+        (f)();
     }
     Ok(())
 }

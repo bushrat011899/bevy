@@ -4,6 +4,8 @@ use crate::{
     observer::ObserverState,
 };
 
+use alloc::vec::Vec;
+
 /// Tracks a list of entity observers for the [`Entity`] [`ObservedBy`] is added to.
 #[derive(Default)]
 pub(crate) struct ObservedBy(pub(crate) Vec<Entity>);

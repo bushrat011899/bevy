@@ -6,6 +6,7 @@ use crate::{
     world::{Command, World},
 };
 use alloc::borrow::Cow;
+use alloc::boxed::Box;
 use bevy_reflect::{PartialReflect, TypeRegistry};
 use core::marker::PhantomData;
 

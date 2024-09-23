@@ -35,6 +35,8 @@
 //! [`World::despawn`]: crate::world::World::despawn
 //! [`EntityWorldMut::insert`]: crate::world::EntityWorldMut::insert
 //! [`EntityWorldMut::remove`]: crate::world::EntityWorldMut::remove
+use alloc::vec::Vec;
+
 mod map_entities;
 #[cfg(feature = "bevy_reflect")]
 use bevy_reflect::Reflect;

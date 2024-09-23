@@ -1,6 +1,7 @@
+use alloc::vec::Vec;
+use bevy_utils::hashbrown::HashMap;
 use core::any::TypeId;
 use fixedbitset::FixedBitSet;
-use std::collections::HashMap;
 
 use crate::{
     schedule::{InternedScheduleLabel, NodeId, Schedule, ScheduleLabel},
