@@ -21,6 +21,7 @@ use bevy_image::Image;
 use bevy_reflect::{std_traits::ReflectDefault, Reflect};
 use bevy_utils::{tracing::warn, HashSet};
 use bevy_window::{SystemCursorIcon, Window};
+use derive_more::derive::From;
 use wgpu_types::TextureFormat;
 
 pub(crate) struct CursorPlugin;
@@ -36,7 +37,7 @@ impl Plugin for CursorPlugin {
 }
 
 /// Insert into a window entity to set the cursor for that window.
-#[derive(Component, Debug, Clone, Reflect, PartialEq, Eq)]
+#[derive(Component, Debug, Clone, Reflect, PartialEq, Eq, From)]
 #[reflect(Component, Debug, Default, PartialEq)]
 pub enum CursorIcon {
     /// Custom cursor image.
@@ -48,18 +49,6 @@ pub enum CursorIcon {
 impl Default for CursorIcon {
     fn default() -> Self {
         CursorIcon::System(Default::default())
-    }
-}
-
-impl From<SystemCursorIcon> for CursorIcon {
-    fn from(icon: SystemCursorIcon) -> Self {
-        CursorIcon::System(icon)
-    }
-}
-
-impl From<CustomCursor> for CursorIcon {
-    fn from(cursor: CustomCursor) -> Self {
-        CursorIcon::Custom(cursor)
     }
 }
 

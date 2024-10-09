@@ -22,6 +22,7 @@ use bevy_ecs::{
     system::Resource,
 };
 use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use derive_more::derive::From;
 
 /// Wrapper struct for [`accesskit::ActionRequest`]. Required to allow it to be used as an `Event`.
 #[derive(Event, Deref, DerefMut)]
@@ -83,14 +84,8 @@ impl ManageAccessibilityUpdates {
 ///
 /// If the entity doesn't have a parent, or if the immediate parent doesn't have
 /// an `AccessibilityNode`, its node will be an immediate child of the primary window.
-#[derive(Component, Clone, Deref, DerefMut)]
+#[derive(Component, Clone, Deref, DerefMut, From)]
 pub struct AccessibilityNode(pub NodeBuilder);
-
-impl From<NodeBuilder> for AccessibilityNode {
-    fn from(node: NodeBuilder) -> Self {
-        Self(node)
-    }
-}
 
 /// Resource representing which entity has keyboard focus, if any.
 #[derive(Resource, Default, Deref, DerefMut, Reflect)]
