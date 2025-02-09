@@ -107,6 +107,62 @@ pub unsafe trait QueryFilter: WorldQuery {
         entity: Entity,
         table_row: TableRow,
     ) -> bool;
+
+    /// Returns false if this filter is unable to match any [`Entity`] with its current
+    /// [`Fetch`](WorldQuery::Fetch).
+    /// Returns true if this filter _may_ be able to match at least one [`Entity`].
+    ///
+    /// - For archetypal filters ([`IS_ARCHETYPAL = true`](QueryFilter::IS_ARCHETYPAL)) this indicates
+    /// the entire [`Archetype`] can be skipped.
+    /// - For non-archetypal filters ([`IS_ARCHETYPAL = false`](QueryFilter::IS_ARCHETYPAL)) this indicates
+    /// the entire [`Table`] can be skipped.
+    ///
+    /// # Implementors
+    ///
+    /// Implementors of this method will generally have a trivial `true` body, which is the default.
+    ///
+    /// For non-trivial implementations, note that this is _not_ a replacement for [`filter_fetch`](QueryFilter::filter_fetch).
+    /// Your implementation must return valid results even if this pre-filtration step is skipped.
+    /// This method is purely an optimization available to query primitives which _may_ be used.
+    #[inline(always)]
+    fn pre_filter(_fetch: &Self::Fetch<'_>) -> bool {
+        true
+    }
+}
+
+/// Provides a mechanism for adjusting the [`Fetch`](WorldQuery::Fetch) of a [`QueryFilter`].
+///
+/// Filters implementing this trait can only use this to further refine their results within the
+/// preexisting archetype matches of this filter.
+///
+/// It is highly encouraged to consider the input as optional and allow the filter to work without
+/// it ever being provided.
+///
+/// # Safety
+///
+/// Implementing this trait allows a [`QueryFilter`] to modify the value of its [`Fetch`](WorldQuery::Fetch)
+/// with an arbitrary external input.
+/// This _must_ preserve the existing invariants required to implement [`QueryFilter`].
+pub unsafe trait AdjustableQueryFilter: QueryFilter {
+    /// The type of input that will be used by [`adjust_filter`](AdjustableQueryFilter::adjust_filter)
+    /// to adjust the state of this filter.
+    ///
+    /// The lifetime of the input must be at least that of the internal [`Fetch`](WorldQuery::Fetch)
+    /// state.
+    /// This does permit providing a resource to this filter, as it will typically be provided
+    /// as a system parameter with the same lifetime as a query using this filter.
+    type Input<'a>;
+
+    /// Adjusts the [`Fetch`](WorldQuery::Fetch) of this [`QueryFilter`].
+    ///
+    /// # Safety
+    ///
+    /// - Any modifications to the provided [`Fetch`](WorldQuery::Fetch) _must_ preserve all
+    /// invariants involved in the implementation of [`QueryFilter`].
+    unsafe fn adjust_filter<'a>(
+        state: &mut <Self as WorldQuery>::Fetch<'a>,
+        input: Self::Input<'a>,
+    );
 }
 
 /// Filter that selects entities with a component `T`.
@@ -503,6 +559,15 @@ macro_rules! impl_or_query_filter {
                 // SAFETY: The invariants are upheld by the caller.
                 false $(|| ($filter.matches && unsafe { $filter::filter_fetch(&mut $filter.fetch, entity, table_row) }))*
             }
+
+            #[inline(always)]
+            fn pre_filter(
+                fetch: &Self::Fetch<'_>,
+            ) -> bool {
+                let ($($filter,)*) = fetch;
+                // SAFETY: The invariants are upheld by the caller.
+                false $(|| $filter::pre_filter(&$filter.fetch))*
+            }
         }
     };
 }
@@ -535,6 +600,15 @@ macro_rules! impl_tuple_query_filter {
                 let ($($name,)*) = fetch;
                 // SAFETY: The invariants are upheld by the caller.
                 true $(&& unsafe { $name::filter_fetch($name, entity, table_row) })*
+            }
+
+            #[inline(always)]
+            fn pre_filter(
+                fetch: &Self::Fetch<'_>,
+            ) -> bool {
+                let ($($name,)*) = fetch;
+                // SAFETY: The invariants are upheld by the caller.
+                true $(&& $name::pre_filter($name))*
             }
         }
 

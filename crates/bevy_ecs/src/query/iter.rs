@@ -1,4 +1,4 @@
-use super::{QueryData, QueryFilter, ReadOnlyQueryData};
+use super::{AdjustableQueryFilter, QueryData, QueryFilter, ReadOnlyQueryData};
 use crate::{
     archetype::{Archetype, ArchetypeEntity, Archetypes},
     bundle::Bundle,
@@ -30,6 +30,18 @@ pub struct QueryIter<'w, 's, D: QueryData, F: QueryFilter> {
     archetypes: &'w Archetypes,
     query_state: &'s QueryState<D, F>,
     cursor: QueryIterationCursor<'w, 's, D, F>,
+}
+
+impl<'w, 's, D: QueryData, F: AdjustableQueryFilter> QueryIter<'w, 's, D, F> {
+    /// Provide the [`AdjustableQueryFilter`] `F` with an [`Input`](AdjustableQueryFilter::Input).
+    // TODO: Replicate on the other query iteration types, and potential on `Query` itself.
+    pub fn provide_filter(&mut self, input: F::Input<'w>) -> &mut Self {
+        // SAFETY: TODO
+        unsafe {
+            F::adjust_filter(&mut self.cursor.filter, input);
+        }
+        self
+    }
 }
 
 impl<'w, 's, D: QueryData, F: QueryFilter> QueryIter<'w, 's, D, F> {
@@ -2463,6 +2475,11 @@ impl<'w, 's, D: QueryData, F: QueryFilter> QueryIterationCursor<'w, 's, D, F> {
                     self.table_entities = table.entities();
                     self.current_len = table.entity_count();
                     self.current_row = 0;
+
+                    if !F::pre_filter(&self.filter) {
+                        self.current_row = self.current_len;
+                        continue;
+                    }
                 }
 
                 // SAFETY: set_table was called prior.
@@ -2512,6 +2529,11 @@ impl<'w, 's, D: QueryData, F: QueryFilter> QueryIterationCursor<'w, 's, D, F> {
                     self.archetype_entities = archetype.entities();
                     self.current_len = archetype.len();
                     self.current_row = 0;
+
+                    if !F::pre_filter(&self.filter) {
+                        self.current_row = self.current_len;
+                        continue;
+                    }
                 }
 
                 // SAFETY: set_archetype was called prior.

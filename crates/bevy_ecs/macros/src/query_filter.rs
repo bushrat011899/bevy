@@ -108,6 +108,14 @@ pub fn derive_query_filter_impl(input: TokenStream) -> TokenStream {
             ) -> bool {
                 true #(&& <#field_types>::filter_fetch(&mut _fetch.#named_field_idents, _entity, _table_row))*
             }
+
+            #[allow(unused_variables)]
+            #[inline(always)]
+            fn pre_filter<'__w>(
+                _fetch: &<Self as #path::query::WorldQuery>::Fetch<'__w>,
+            ) -> bool {
+                true #(&& <#field_types>::pre_filter(&_fetch.#named_field_idents))*
+            }
         }
     };
 

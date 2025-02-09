@@ -1930,6 +1930,17 @@ category = "ECS (Entity Component System)"
 wasm = false
 
 [[example]]
+name = "adjustable_query_filter"
+path = "examples/ecs/adjustable_query_filter.rs"
+doc-scrape-examples = true
+
+[package.metadata.example.adjustable_query_filter]
+name = "Adjustable Query Filter"
+description = "Shows how to create a custom query filter that can be adjusted at runtime"
+category = "ECS (Entity Component System)"
+wasm = true
+
+[[example]]
 name = "change_detection"
 path = "examples/ecs/change_detection.rs"
 doc-scrape-examples = true
