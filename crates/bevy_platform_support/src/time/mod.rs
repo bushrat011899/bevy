@@ -2,12 +2,16 @@
 
 pub use time::Instant;
 
-cfg_if::cfg_if! {
-    if #[cfg(all(target_arch = "wasm32", feature = "web"))] {
+use crate::cfg;
+
+cfg::switch! {
+    cfg::web => {
         use web_time as time;
-    } else if #[cfg(feature = "std")] {
+    }
+    cfg::std => {
         use std::time;
-    } else {
+    }
+    _ => {
         mod fallback;
 
         use fallback as time;

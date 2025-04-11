@@ -12,32 +12,49 @@ pub use atomic_8::{AtomicBool, AtomicI8, AtomicU8};
 pub use atomic_ptr::{AtomicIsize, AtomicPtr, AtomicUsize};
 pub use core::sync::atomic::Ordering;
 
-#[cfg(target_has_atomic = "8")]
-use core::sync::atomic as atomic_8;
+use crate::cfg::switch;
 
-#[cfg(not(target_has_atomic = "8"))]
-use portable_atomic as atomic_8;
+switch! {
+    target_has_atomic = "8" => {
+        use core::sync::atomic as atomic_8;
+    }
+    _ => {
+        use portable_atomic as atomic_8;
+    }
+}
 
-#[cfg(target_has_atomic = "16")]
-use core::sync::atomic as atomic_16;
+switch! {
+    target_has_atomic = "16" => {
+        use core::sync::atomic as atomic_16;
+    }
+    _ => {
+        use portable_atomic as atomic_16;
+    }
+}
 
-#[cfg(not(target_has_atomic = "16"))]
-use portable_atomic as atomic_16;
+switch! {
+    target_has_atomic = "32" => {
+        use core::sync::atomic as atomic_32;
+    }
+    _ => {
+        use portable_atomic as atomic_32;
+    }
+}
 
-#[cfg(target_has_atomic = "32")]
-use core::sync::atomic as atomic_32;
+switch! {
+    target_has_atomic = "64" => {
+        use core::sync::atomic as atomic_64;
+    }
+    _ => {
+        use portable_atomic as atomic_64;
+    }
+}
 
-#[cfg(not(target_has_atomic = "32"))]
-use portable_atomic as atomic_32;
-
-#[cfg(target_has_atomic = "64")]
-use core::sync::atomic as atomic_64;
-
-#[cfg(not(target_has_atomic = "64"))]
-use portable_atomic as atomic_64;
-
-#[cfg(target_has_atomic = "ptr")]
-use core::sync::atomic as atomic_ptr;
-
-#[cfg(not(target_has_atomic = "ptr"))]
-use portable_atomic as atomic_ptr;
+switch! {
+    target_has_atomic = "ptr" => {
+        use core::sync::atomic as atomic_ptr;
+    }
+    _ => {
+        use portable_atomic as atomic_ptr;
+    }
+}
