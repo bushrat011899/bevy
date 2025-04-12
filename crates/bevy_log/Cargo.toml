@@ -21,7 +21,7 @@ tracing-tracy = ["tracing", "dep:tracing-tracy"]
 # Allows access to the `std` crate. Enabling this feature will prevent compilation
 # on `no_std` targets, but provides access to certain additional features on
 # supported platforms.
-std = ["bevy_app/std", "bevy_utils/std", "bevy_ecs/std"]
+std = ["bevy_app/std", "bevy_ecs/std"]
 
 # Enables use of browser APIs.
 # Note this is currently only applicable on `wasm32` architectures.
@@ -30,9 +30,7 @@ web = ["bevy_app/web", "dep:tracing-wasm"]
 [dependencies]
 # bevy
 bevy_app = { path = "../bevy_app", version = "0.16.0-dev", default-features = false }
-bevy_utils = { path = "../bevy_utils", version = "0.16.0-dev", default-features = false, features = [
-  "alloc",
-] }
+bevy_utils = { path = "../bevy_utils", version = "0.16.0-dev", default-features = false }
 bevy_ecs = { path = "../bevy_ecs", version = "0.16.0-dev", default-features = false }
 
 # other
