@@ -559,8 +559,53 @@
 
 #![no_std]
 
-#[cfg(feature = "std")]
-extern crate std;
+/// Provides the state of features in this crate.
+pub mod cfg {
+    pub use bevy_platform::cfg::*;
+
+    define_alias! {
+        feature = "documentation" => {
+            /// When enabled, allows documentation comments to be accessed via reflection
+            documentation
+        }
+        feature = "functions" => {
+            /// Enables function reflection
+            functions
+        }
+        feature = "debug" => {
+            /// Enables features useful for debugging reflection
+            debug
+        }
+        feature = "debug_stack" => {
+            /// When enabled, keeps track of the current serialization/deserialization context for better error messages
+            debug_stack
+        }
+        feature = "glam" => {
+            /// Adds reflection support to `glam` types.
+            glam
+        }
+        feature = "petgraph" => {
+            /// Adds reflection support to `petgraph` types.
+            petgraph
+        }
+        feature = "smallvec" => {
+            /// Adds reflection support to `smallvec` types.
+            smallvec
+        }
+        feature = "uuid" => {
+            /// Adds reflection support to `uuid` types.
+            uuid
+        }
+        feature = "wgpu-types" => {
+            /// Adds reflection support to `wgpu-types` types.
+            wgpu_types
+        }
+    }
+}
+
+cfg::std! {
+    extern crate std;
+}
 
 extern crate alloc;
 
@@ -588,23 +633,7 @@ mod type_info;
 mod type_path;
 mod type_registry;
 
-mod impls {
-    mod foldhash;
-    mod std;
-
-    #[cfg(feature = "glam")]
-    mod glam;
-    #[cfg(feature = "petgraph")]
-    mod petgraph;
-    #[cfg(feature = "smallvec")]
-    mod smallvec;
-    #[cfg(feature = "smol_str")]
-    mod smol_str;
-    #[cfg(feature = "uuid")]
-    mod uuid;
-    #[cfg(feature = "wgpu-types")]
-    mod wgpu_types;
-}
+mod impls;
 
 pub mod attributes;
 mod enums;
