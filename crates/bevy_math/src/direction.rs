@@ -12,9 +12,6 @@ use bevy_reflect::Reflect;
 #[cfg(all(feature = "serialize", feature = "bevy_reflect"))]
 use bevy_reflect::{ReflectDeserialize, ReflectSerialize};
 
-#[cfg(all(debug_assertions, feature = "std"))]
-use std::eprintln;
-
 use thiserror::Error;
 
 /// An error indicating that a direction is invalid.
@@ -67,14 +64,15 @@ fn assert_is_normalized(message: &str, length_squared: f32) {
             ops::sqrt(length_squared)
         );
     } else if length_error_squared > 2e-4 {
-        // Length error is approximately 1e-4 or more.
-        #[cfg(feature = "std")]
-        #[expect(clippy::print_stderr, reason = "Allowed behind `std` feature gate.")]
-        {
-            eprintln!(
-                "Warning: {message} The length is {}.",
-                ops::sqrt(length_squared)
-            );
+        crate::cfg::std! {
+            // Length error is approximately 1e-4 or more.
+            #[expect(clippy::print_stderr, reason = "Allowed behind `std` feature gate.")]
+            {
+                std::eprintln!(
+                    "Warning: {message} The length is {}.",
+                    ops::sqrt(length_squared)
+                );
+            }
         }
     }
 }

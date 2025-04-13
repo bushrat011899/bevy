@@ -8,16 +8,83 @@ use crate::{
     Dir2, InvalidDirectionError, Isometry2d, Ray2d, Rot2, Vec2,
 };
 
-#[cfg(feature = "alloc")]
-use super::polygon::is_polygon_simple;
-
 #[cfg(feature = "bevy_reflect")]
 use bevy_reflect::{std_traits::ReflectDefault, Reflect};
 #[cfg(all(feature = "serialize", feature = "bevy_reflect"))]
 use bevy_reflect::{ReflectDeserialize, ReflectSerialize};
 
-#[cfg(feature = "alloc")]
-use alloc::{boxed::Box, vec::Vec};
+crate::cfg::alloc! {
+    use super::polygon::is_polygon_simple;
+
+    use alloc::{boxed::Box, vec::Vec};
+
+    /// A series of connected line segments in 2D space, allocated on the heap
+    /// in a `Box<[Vec2]>`.
+    ///
+    /// For a version without alloc: [`Polyline2d`]
+    #[derive(Clone, Debug, PartialEq)]
+    #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+    pub struct BoxedPolyline2d {
+        /// The vertices of the polyline
+        pub vertices: Box<[Vec2]>,
+    }
+
+    impl Primitive2d for BoxedPolyline2d {}
+
+    impl FromIterator<Vec2> for BoxedPolyline2d {
+        fn from_iter<I: IntoIterator<Item = Vec2>>(iter: I) -> Self {
+            let vertices: Vec<Vec2> = iter.into_iter().collect();
+            Self {
+                vertices: vertices.into_boxed_slice(),
+            }
+        }
+    }
+
+    impl BoxedPolyline2d {
+        /// Create a new `BoxedPolyline2d` from its vertices
+        pub fn new(vertices: impl IntoIterator<Item = Vec2>) -> Self {
+            Self::from_iter(vertices)
+        }
+    }
+
+
+    /// A polygon with a variable number of vertices, allocated on the heap
+    /// in a `Box<[Vec2]>`.
+    ///
+    /// For a version without alloc: [`Polygon`]
+    #[derive(Clone, Debug, PartialEq)]
+    #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+    pub struct BoxedPolygon {
+        /// The vertices of the `BoxedPolygon`
+        pub vertices: Box<[Vec2]>,
+    }
+
+    impl Primitive2d for BoxedPolygon {}
+
+    impl FromIterator<Vec2> for BoxedPolygon {
+        fn from_iter<I: IntoIterator<Item = Vec2>>(iter: I) -> Self {
+            let vertices: Vec<Vec2> = iter.into_iter().collect();
+            Self {
+                vertices: vertices.into_boxed_slice(),
+            }
+        }
+    }
+
+    impl BoxedPolygon {
+        /// Create a new `BoxedPolygon` from its vertices
+        pub fn new(vertices: impl IntoIterator<Item = Vec2>) -> Self {
+            Self::from_iter(vertices)
+        }
+
+        /// Tests if the polygon is simple.
+        ///
+        /// A polygon is simple if it is not self intersecting and not self tangent.
+        /// As such, no two edges of the polygon may cross each other and each vertex must not lie on another edge.
+        pub fn is_simple(&self) -> bool {
+            is_polygon_simple(&self.vertices)
+        }
+    }
+}
 
 /// A circle primitive, representing the set of points some distance from the origin
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -287,7 +354,7 @@ impl Arc2d {
 )]
 pub struct CircularSector {
     /// The arc defining the sector
-    #[cfg_attr(all(feature = "serialize", feature = "alloc"), serde(flatten))]
+    #[cfg_attr(feature = "serialize", serde(flatten))]
     pub arc: Arc2d,
 }
 impl Primitive2d for CircularSector {}
@@ -430,7 +497,7 @@ impl CircularSector {
 )]
 pub struct CircularSegment {
     /// The arc defining the segment
-    #[cfg_attr(all(feature = "serialize", feature = "alloc"), serde(flatten))]
+    #[cfg_attr(feature = "serialize", serde(flatten))]
     pub arc: Arc2d,
 }
 impl Primitive2d for CircularSegment {}
@@ -1531,39 +1598,6 @@ impl<const N: usize> Polyline2d<N> {
     }
 }
 
-/// A series of connected line segments in 2D space, allocated on the heap
-/// in a `Box<[Vec2]>`.
-///
-/// For a version without alloc: [`Polyline2d`]
-#[cfg(feature = "alloc")]
-#[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
-pub struct BoxedPolyline2d {
-    /// The vertices of the polyline
-    pub vertices: Box<[Vec2]>,
-}
-
-#[cfg(feature = "alloc")]
-impl Primitive2d for BoxedPolyline2d {}
-
-#[cfg(feature = "alloc")]
-impl FromIterator<Vec2> for BoxedPolyline2d {
-    fn from_iter<I: IntoIterator<Item = Vec2>>(iter: I) -> Self {
-        let vertices: Vec<Vec2> = iter.into_iter().collect();
-        Self {
-            vertices: vertices.into_boxed_slice(),
-        }
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl BoxedPolyline2d {
-    /// Create a new `BoxedPolyline2d` from its vertices
-    pub fn new(vertices: impl IntoIterator<Item = Vec2>) -> Self {
-        Self::from_iter(vertices)
-    }
-}
-
 /// A triangle in 2D space
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
@@ -1864,13 +1898,14 @@ impl<const N: usize> Polygon<N> {
         Self::from_iter(vertices)
     }
 
-    /// Tests if the polygon is simple.
-    ///
-    /// A polygon is simple if it is not self intersecting and not self tangent.
-    /// As such, no two edges of the polygon may cross each other and each vertex must not lie on another edge.
-    #[cfg(feature = "alloc")]
-    pub fn is_simple(&self) -> bool {
-        is_polygon_simple(&self.vertices)
+    crate::cfg::alloc! {
+        /// Tests if the polygon is simple.
+        ///
+        /// A polygon is simple if it is not self intersecting and not self tangent.
+        /// As such, no two edges of the polygon may cross each other and each vertex must not lie on another edge.
+        pub fn is_simple(&self) -> bool {
+            is_polygon_simple(&self.vertices)
+        }
     }
 }
 
@@ -1958,47 +1993,6 @@ impl<const N: usize> TryFrom<Polygon<N>> for ConvexPolygon<N> {
 
     fn try_from(val: Polygon<N>) -> Result<Self, Self::Error> {
         ConvexPolygon::new(val.vertices)
-    }
-}
-
-/// A polygon with a variable number of vertices, allocated on the heap
-/// in a `Box<[Vec2]>`.
-///
-/// For a version without alloc: [`Polygon`]
-#[cfg(feature = "alloc")]
-#[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
-pub struct BoxedPolygon {
-    /// The vertices of the `BoxedPolygon`
-    pub vertices: Box<[Vec2]>,
-}
-
-#[cfg(feature = "alloc")]
-impl Primitive2d for BoxedPolygon {}
-
-#[cfg(feature = "alloc")]
-impl FromIterator<Vec2> for BoxedPolygon {
-    fn from_iter<I: IntoIterator<Item = Vec2>>(iter: I) -> Self {
-        let vertices: Vec<Vec2> = iter.into_iter().collect();
-        Self {
-            vertices: vertices.into_boxed_slice(),
-        }
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl BoxedPolygon {
-    /// Create a new `BoxedPolygon` from its vertices
-    pub fn new(vertices: impl IntoIterator<Item = Vec2>) -> Self {
-        Self::from_iter(vertices)
-    }
-
-    /// Tests if the polygon is simple.
-    ///
-    /// A polygon is simple if it is not self intersecting and not self tangent.
-    /// As such, no two edges of the polygon may cross each other and each vertex must not lie on another edge.
-    pub fn is_simple(&self) -> bool {
-        is_polygon_simple(&self.vertices)
     }
 }
 

@@ -20,11 +20,57 @@
 //! matrices like [`Mat2`], [`Mat3`] and [`Mat4`] and orientation representations
 //! like [`Quat`].
 
-#[cfg(feature = "std")]
-extern crate std;
+/// Provides the state of features in this crate.
+pub mod cfg {
+    pub use bevy_platform::cfg::*;
 
-#[cfg(feature = "alloc")]
-extern crate alloc;
+    define_alias! {
+        feature = "serialize" => {
+            /// Enables serialization via serde.
+            serialize
+        }
+        feature = "approx" => {
+            /// Enable approx for glam types to approximate floating point equality comparisons and assertions.
+            approx
+        }
+        feature = "mint" => {
+            /// Enable interoperation of glam types with mint-compatible libraries.
+            mint
+        }
+        feature = "libm" => {
+            /// Enable libm mathematical functions for glam types to ensure consistent outputs across platforms at the cost of losing hardware-level optimization using intrinsics
+            libm
+        }
+        feature = "glam_assert" => {
+            /// Enable assertions to check the validity of parameters passed to glam
+            glam_assert
+        }
+        feature = "debug_glam_assert" => {
+            /// Enable assertions in debug builds to check the validity of parameters passed to glam
+            debug_glam_assert
+        }
+        feature = "rand" => {
+            /// Enable the rand dependency for shape_sampling
+            rand
+        }
+        feature = "curve" => {
+            /// Include code related to the Curve trait
+            curve
+        }
+        feature = "bevy_reflect" => {
+            /// Enable bevy_reflect
+            bevy_reflect
+        }
+    }
+}
+
+cfg::std! {
+    extern crate std;
+}
+
+cfg::alloc! {
+    extern crate alloc;
+}
 
 mod affine3;
 mod aspect_ratio;
@@ -41,11 +87,15 @@ mod ray;
 mod rects;
 mod rotation2d;
 
-#[cfg(feature = "curve")]
-pub mod curve;
+cfg::curve! {
+    pub mod curve;
+    pub use curve::Curve;
+}
 
-#[cfg(feature = "rand")]
-pub mod sampling;
+cfg::rand! {
+    pub mod sampling;
+    pub use sampling::{FromRng, ShapeSample};
+}
 
 pub use affine3::*;
 pub use aspect_ratio::AspectRatio;
@@ -59,12 +109,6 @@ pub use ray::{Ray2d, Ray3d};
 pub use rects::*;
 pub use rotation2d::Rot2;
 
-#[cfg(feature = "curve")]
-pub use curve::Curve;
-
-#[cfg(feature = "rand")]
-pub use sampling::{FromRng, ShapeSample};
-
 /// The math prelude.
 ///
 /// This includes the most common types in this crate, re-exported for your convenience.
@@ -72,7 +116,7 @@ pub mod prelude {
     #[doc(hidden)]
     pub use crate::{
         bvec2, bvec3, bvec3a, bvec4, bvec4a,
-        cubic_splines::{CubicNurbsError, CubicSegment, RationalSegment},
+        cubic_splines::{CubicSegment, RationalSegment},
         direction::{Dir2, Dir3, Dir3A},
         ivec2, ivec3, ivec4, mat2, mat3, mat3a, mat4, ops,
         primitives::*,
@@ -82,20 +126,23 @@ pub mod prelude {
         Vec2Swizzles, Vec3, Vec3A, Vec3Swizzles, Vec4, Vec4Swizzles,
     };
 
-    #[doc(hidden)]
-    #[cfg(feature = "curve")]
-    pub use crate::curve::*;
+    crate::cfg::curve! {
+        #[doc(hidden)]
+        pub use crate::curve::*;
+    }
 
-    #[doc(hidden)]
-    #[cfg(feature = "rand")]
-    pub use crate::sampling::{FromRng, ShapeSample};
+    crate::cfg::rand! {
+        #[doc(hidden)]
+        pub use crate::sampling::{FromRng, ShapeSample};
+    }
 
-    #[cfg(feature = "alloc")]
-    #[doc(hidden)]
-    pub use crate::cubic_splines::{
-        CubicBSpline, CubicBezier, CubicCardinalSpline, CubicCurve, CubicGenerator, CubicHermite,
-        CubicNurbs, CyclicCubicGenerator, RationalCurve, RationalGenerator,
-    };
+    crate::cfg::alloc! {
+        #[doc(hidden)]
+        pub use crate::cubic_splines::{
+            CubicBSpline, CubicBezier, CubicCardinalSpline, CubicCurve, CubicGenerator, CubicHermite,CubicNurbsError,
+            CubicNurbs, CyclicCubicGenerator, RationalCurve, RationalGenerator,
+        };
+    }
 }
 
 pub use glam::*;

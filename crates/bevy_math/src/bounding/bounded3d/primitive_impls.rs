@@ -10,9 +10,6 @@ use crate::{
     Isometry2d, Isometry3d, Mat3, Vec2, Vec3, Vec3A,
 };
 
-#[cfg(feature = "alloc")]
-use crate::primitives::BoxedPolyline3d;
-
 use super::{Aabb3d, Bounded3d, BoundingSphere};
 
 impl Bounded3d for Sphere {
@@ -87,17 +84,6 @@ impl Bounded3d for Segment3d {
 }
 
 impl<const N: usize> Bounded3d for Polyline3d<N> {
-    fn aabb_3d(&self, isometry: impl Into<Isometry3d>) -> Aabb3d {
-        Aabb3d::from_point_cloud(isometry, self.vertices.iter().copied())
-    }
-
-    fn bounding_sphere(&self, isometry: impl Into<Isometry3d>) -> BoundingSphere {
-        BoundingSphere::from_point_cloud(isometry, &self.vertices)
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl Bounded3d for BoxedPolyline3d {
     fn aabb_3d(&self, isometry: impl Into<Isometry3d>) -> Aabb3d {
         Aabb3d::from_point_cloud(isometry, self.vertices.iter().copied())
     }
@@ -370,6 +356,20 @@ impl Bounded3d for Triangle3d {
             let circumcenter = self.circumcenter();
             let radius = circumcenter.distance(a);
             BoundingSphere::new(Vec3A::from(circumcenter) + isometry.translation, radius)
+        }
+    }
+}
+
+crate::cfg::alloc! {
+    use crate::primitives::BoxedPolyline3d;
+
+    impl Bounded3d for BoxedPolyline3d {
+        fn aabb_3d(&self, isometry: impl Into<Isometry3d>) -> Aabb3d {
+            Aabb3d::from_point_cloud(isometry, self.vertices.iter().copied())
+        }
+
+        fn bounding_sphere(&self, isometry: impl Into<Isometry3d>) -> BoundingSphere {
+            BoundingSphere::from_point_cloud(isometry, &self.vertices)
         }
     }
 }

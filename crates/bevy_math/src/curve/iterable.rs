@@ -3,9 +3,6 @@
 
 use super::Interval;
 
-#[cfg(feature = "alloc")]
-use {super::ConstantCurve, alloc::vec::Vec};
-
 /// A curve which provides samples in the form of [`Iterator`]s.
 ///
 /// This is an abstraction that provides an interface for curves which look like `Curve<Vec<T>>`
@@ -42,16 +39,19 @@ pub trait IterableCurve<T> {
     }
 }
 
-#[cfg(feature = "alloc")]
-impl<T> IterableCurve<T> for ConstantCurve<Vec<T>>
-where
-    T: Clone,
-{
-    fn domain(&self) -> Interval {
-        self.domain
-    }
+crate::cfg::alloc! {
+    use {super::ConstantCurve, alloc::vec::Vec};
 
-    fn sample_iter_unchecked(&self, _t: f32) -> impl Iterator<Item = T> {
-        self.value.iter().cloned()
+    impl<T> IterableCurve<T> for ConstantCurve<Vec<T>>
+    where
+        T: Clone,
+    {
+        fn domain(&self) -> Interval {
+            self.domain
+        }
+
+        fn sample_iter_unchecked(&self, _t: f32) -> impl Iterator<Item = T> {
+            self.value.iter().cloned()
+        }
     }
 }

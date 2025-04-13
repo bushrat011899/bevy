@@ -75,7 +75,6 @@ std = [
   "bevy_log?/std",
   "bevy_log?/tracing",
   "bevy_ecs?/std",
-  "bevy_math/std",
   "bevy_tasks/std",
   "bevy_utils",
   "serde?/std",

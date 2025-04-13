@@ -12,9 +12,6 @@ use crate::{
 };
 use core::f32::consts::{FRAC_PI_2, PI, TAU};
 
-#[cfg(feature = "alloc")]
-use crate::primitives::{BoxedPolygon, BoxedPolyline2d};
-
 use smallvec::SmallVec;
 
 use super::{Aabb2d, Bounded2d, BoundingCircle};
@@ -289,17 +286,6 @@ impl<const N: usize> Bounded2d for Polyline2d<N> {
     }
 }
 
-#[cfg(feature = "alloc")]
-impl Bounded2d for BoxedPolyline2d {
-    fn aabb_2d(&self, isometry: impl Into<Isometry2d>) -> Aabb2d {
-        Aabb2d::from_point_cloud(isometry, &self.vertices)
-    }
-
-    fn bounding_circle(&self, isometry: impl Into<Isometry2d>) -> BoundingCircle {
-        BoundingCircle::from_point_cloud(isometry, &self.vertices)
-    }
-}
-
 impl Bounded2d for Triangle2d {
     fn aabb_2d(&self, isometry: impl Into<Isometry2d>) -> Aabb2d {
         let isometry = isometry.into();
@@ -386,17 +372,6 @@ impl<const N: usize> Bounded2d for ConvexPolygon<N> {
     }
 }
 
-#[cfg(feature = "alloc")]
-impl Bounded2d for BoxedPolygon {
-    fn aabb_2d(&self, isometry: impl Into<Isometry2d>) -> Aabb2d {
-        Aabb2d::from_point_cloud(isometry, &self.vertices)
-    }
-
-    fn bounding_circle(&self, isometry: impl Into<Isometry2d>) -> BoundingCircle {
-        BoundingCircle::from_point_cloud(isometry, &self.vertices)
-    }
-}
-
 impl Bounded2d for RegularPolygon {
     fn aabb_2d(&self, isometry: impl Into<Isometry2d>) -> Aabb2d {
         let isometry = isometry.into();
@@ -445,6 +420,30 @@ impl Bounded2d for Capsule2d {
     fn bounding_circle(&self, isometry: impl Into<Isometry2d>) -> BoundingCircle {
         let isometry = isometry.into();
         BoundingCircle::new(isometry.translation, self.radius + self.half_length)
+    }
+}
+
+crate::cfg::alloc! {
+    use crate::primitives::{BoxedPolygon, BoxedPolyline2d};
+
+    impl Bounded2d for BoxedPolyline2d {
+        fn aabb_2d(&self, isometry: impl Into<Isometry2d>) -> Aabb2d {
+            Aabb2d::from_point_cloud(isometry, &self.vertices)
+        }
+
+        fn bounding_circle(&self, isometry: impl Into<Isometry2d>) -> BoundingCircle {
+            BoundingCircle::from_point_cloud(isometry, &self.vertices)
+        }
+    }
+
+    impl Bounded2d for BoxedPolygon {
+        fn aabb_2d(&self, isometry: impl Into<Isometry2d>) -> Aabb2d {
+            Aabb2d::from_point_cloud(isometry, &self.vertices)
+        }
+
+        fn bounding_circle(&self, isometry: impl Into<Isometry2d>) -> BoundingCircle {
+            BoundingCircle::from_point_cloud(isometry, &self.vertices)
+        }
     }
 }
 
@@ -614,7 +613,6 @@ mod tests {
         ];
 
         for test in tests {
-            #[cfg(feature = "std")]
             println!("subtest case: {}", test.name);
             let segment: CircularSegment = test.arc.into();
 
@@ -771,7 +769,6 @@ mod tests {
         ];
 
         for test in tests {
-            #[cfg(feature = "std")]
             println!("subtest case: {}", test.name);
             let sector: CircularSector = test.arc.into();
 

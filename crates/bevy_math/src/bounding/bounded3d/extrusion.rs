@@ -12,9 +12,6 @@ use crate::{
     Isometry2d, Isometry3d, Quat, Rot2,
 };
 
-#[cfg(feature = "alloc")]
-use crate::primitives::{BoxedPolygon, BoxedPolyline2d};
-
 use crate::{bounding::Bounded2d, primitives::Circle};
 
 use super::{Aabb3d, Bounded3d, BoundingSphere};
@@ -107,17 +104,6 @@ impl<const N: usize> BoundedExtrusion for Polyline2d<N> {
     }
 }
 
-#[cfg(feature = "alloc")]
-impl BoundedExtrusion for BoxedPolyline2d {
-    fn extrusion_aabb_3d(&self, half_depth: f32, isometry: impl Into<Isometry3d>) -> Aabb3d {
-        let isometry = isometry.into();
-        let aabb = Aabb3d::from_point_cloud(isometry, self.vertices.iter().map(|v| v.extend(0.)));
-        let depth = isometry.rotation * Vec3A::new(0., 0., half_depth);
-
-        aabb.grow(depth.abs())
-    }
-}
-
 impl BoundedExtrusion for Triangle2d {
     fn extrusion_aabb_3d(&self, half_depth: f32, isometry: impl Into<Isometry3d>) -> Aabb3d {
         let isometry = isometry.into();
@@ -142,17 +128,6 @@ impl<const N: usize> BoundedExtrusion for Polygon<N> {
         let isometry = isometry.into();
         let aabb =
             Aabb3d::from_point_cloud(isometry, self.vertices.map(|v| v.extend(0.)).into_iter());
-        let depth = isometry.rotation * Vec3A::new(0., 0., half_depth);
-
-        aabb.grow(depth.abs())
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl BoundedExtrusion for BoxedPolygon {
-    fn extrusion_aabb_3d(&self, half_depth: f32, isometry: impl Into<Isometry3d>) -> Aabb3d {
-        let isometry = isometry.into();
-        let aabb = Aabb3d::from_point_cloud(isometry, self.vertices.iter().map(|v| v.extend(0.)));
         let depth = isometry.rotation * Vec3A::new(0., 0., half_depth);
 
         aabb.grow(depth.abs())
@@ -260,6 +235,30 @@ pub trait BoundedExtrusion: Primitive2d + Bounded2d {
         let center = isometry * Vec3A::from(center.extend(0.));
 
         BoundingSphere::new(center, radius)
+    }
+}
+
+crate::cfg::alloc! {
+    use crate::primitives::{BoxedPolygon, BoxedPolyline2d};
+
+    impl BoundedExtrusion for BoxedPolyline2d {
+        fn extrusion_aabb_3d(&self, half_depth: f32, isometry: impl Into<Isometry3d>) -> Aabb3d {
+            let isometry = isometry.into();
+            let aabb = Aabb3d::from_point_cloud(isometry, self.vertices.iter().map(|v| v.extend(0.)));
+            let depth = isometry.rotation * Vec3A::new(0., 0., half_depth);
+
+            aabb.grow(depth.abs())
+        }
+    }
+
+    impl BoundedExtrusion for BoxedPolygon {
+        fn extrusion_aabb_3d(&self, half_depth: f32, isometry: impl Into<Isometry3d>) -> Aabb3d {
+            let isometry = isometry.into();
+            let aabb = Aabb3d::from_point_cloud(isometry, self.vertices.iter().map(|v| v.extend(0.)));
+            let depth = isometry.rotation * Vec3A::new(0., 0., half_depth);
+
+            aabb.grow(depth.abs())
+        }
     }
 }
 

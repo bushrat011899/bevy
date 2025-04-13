@@ -5,9 +5,6 @@ use crate::curve::{
     Curve, Interval,
 };
 
-#[cfg(feature = "alloc")]
-use super::{CubicCurve, RationalCurve};
-
 // -- CubicSegment
 
 impl<P: VectorSpace> Curve<P> for CubicSegment<P> {
@@ -33,46 +30,6 @@ impl<P: VectorSpace> SampleDerivative<P> for CubicSegment<P> {
 }
 
 impl<P: VectorSpace> SampleTwoDerivatives<P> for CubicSegment<P> {
-    #[inline]
-    fn sample_with_two_derivatives_unchecked(&self, t: f32) -> WithTwoDerivatives<P> {
-        WithTwoDerivatives {
-            value: self.position(t),
-            derivative: self.velocity(t),
-            second_derivative: self.acceleration(t),
-        }
-    }
-}
-
-// -- CubicCurve
-
-#[cfg(feature = "alloc")]
-impl<P: VectorSpace> Curve<P> for CubicCurve<P> {
-    #[inline]
-    fn domain(&self) -> Interval {
-        // The non-emptiness invariant guarantees that this succeeds.
-        Interval::new(0.0, self.segments.len() as f32)
-            .expect("CubicCurve is invalid because it has no segments")
-    }
-
-    #[inline]
-    fn sample_unchecked(&self, t: f32) -> P {
-        self.position(t)
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<P: VectorSpace> SampleDerivative<P> for CubicCurve<P> {
-    #[inline]
-    fn sample_with_derivative_unchecked(&self, t: f32) -> WithDerivative<P> {
-        WithDerivative {
-            value: self.position(t),
-            derivative: self.velocity(t),
-        }
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<P: VectorSpace> SampleTwoDerivatives<P> for CubicCurve<P> {
     #[inline]
     fn sample_with_two_derivatives_unchecked(&self, t: f32) -> WithTwoDerivatives<P> {
         WithTwoDerivatives {
@@ -118,42 +75,80 @@ impl<P: VectorSpace> SampleTwoDerivatives<P> for RationalSegment<P> {
     }
 }
 
-// -- RationalCurve
+crate::cfg::alloc! {
+    use super::{CubicCurve, RationalCurve};
 
-#[cfg(feature = "alloc")]
-impl<P: VectorSpace> Curve<P> for RationalCurve<P> {
-    #[inline]
-    fn domain(&self) -> Interval {
-        // The non-emptiness invariant guarantees the success of this.
-        Interval::new(0.0, self.length())
-            .expect("RationalCurve is invalid because it has zero length")
-    }
+    // -- CubicCurve
 
-    #[inline]
-    fn sample_unchecked(&self, t: f32) -> P {
-        self.position(t)
-    }
-}
+    impl<P: VectorSpace> Curve<P> for CubicCurve<P> {
+        #[inline]
+        fn domain(&self) -> Interval {
+            // The non-emptiness invariant guarantees that this succeeds.
+            Interval::new(0.0, self.segments().len() as f32)
+                .expect("CubicCurve is invalid because it has no segments")
+        }
 
-#[cfg(feature = "alloc")]
-impl<P: VectorSpace> SampleDerivative<P> for RationalCurve<P> {
-    #[inline]
-    fn sample_with_derivative_unchecked(&self, t: f32) -> WithDerivative<P> {
-        WithDerivative {
-            value: self.position(t),
-            derivative: self.velocity(t),
+        #[inline]
+        fn sample_unchecked(&self, t: f32) -> P {
+            self.position(t)
         }
     }
-}
 
-#[cfg(feature = "alloc")]
-impl<P: VectorSpace> SampleTwoDerivatives<P> for RationalCurve<P> {
-    #[inline]
-    fn sample_with_two_derivatives_unchecked(&self, t: f32) -> WithTwoDerivatives<P> {
-        WithTwoDerivatives {
-            value: self.position(t),
-            derivative: self.velocity(t),
-            second_derivative: self.acceleration(t),
+    impl<P: VectorSpace> SampleDerivative<P> for CubicCurve<P> {
+        #[inline]
+        fn sample_with_derivative_unchecked(&self, t: f32) -> WithDerivative<P> {
+            WithDerivative {
+                value: self.position(t),
+                derivative: self.velocity(t),
+            }
+        }
+    }
+
+    impl<P: VectorSpace> SampleTwoDerivatives<P> for CubicCurve<P> {
+        #[inline]
+        fn sample_with_two_derivatives_unchecked(&self, t: f32) -> WithTwoDerivatives<P> {
+            WithTwoDerivatives {
+                value: self.position(t),
+                derivative: self.velocity(t),
+                second_derivative: self.acceleration(t),
+            }
+        }
+    }
+
+    // -- RationalCurve
+
+    impl<P: VectorSpace> Curve<P> for RationalCurve<P> {
+        #[inline]
+        fn domain(&self) -> Interval {
+            // The non-emptiness invariant guarantees the success of this.
+            Interval::new(0.0, self.length())
+                .expect("RationalCurve is invalid because it has zero length")
+        }
+
+        #[inline]
+        fn sample_unchecked(&self, t: f32) -> P {
+            self.position(t)
+        }
+    }
+
+    impl<P: VectorSpace> SampleDerivative<P> for RationalCurve<P> {
+        #[inline]
+        fn sample_with_derivative_unchecked(&self, t: f32) -> WithDerivative<P> {
+            WithDerivative {
+                value: self.position(t),
+                derivative: self.velocity(t),
+            }
+        }
+    }
+
+    impl<P: VectorSpace> SampleTwoDerivatives<P> for RationalCurve<P> {
+        #[inline]
+        fn sample_with_two_derivatives_unchecked(&self, t: f32) -> WithTwoDerivatives<P> {
+            WithTwoDerivatives {
+                value: self.position(t),
+                derivative: self.velocity(t),
+                second_derivative: self.acceleration(t),
+            }
         }
     }
 }

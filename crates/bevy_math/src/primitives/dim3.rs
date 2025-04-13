@@ -12,9 +12,6 @@ use bevy_reflect::{std_traits::ReflectDefault, Reflect};
 use bevy_reflect::{ReflectDeserialize, ReflectSerialize};
 use glam::Quat;
 
-#[cfg(feature = "alloc")]
-use alloc::{boxed::Box, vec::Vec};
-
 /// A sphere primitive, representing the set of all points some distance from the origin
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
@@ -600,39 +597,6 @@ impl<const N: usize> FromIterator<Vec3> for Polyline3d<N> {
 
 impl<const N: usize> Polyline3d<N> {
     /// Create a new `Polyline3d` from its vertices
-    pub fn new(vertices: impl IntoIterator<Item = Vec3>) -> Self {
-        Self::from_iter(vertices)
-    }
-}
-
-/// A series of connected line segments in 3D space, allocated on the heap
-/// in a `Box<[Vec3]>`.
-///
-/// For a version without alloc: [`Polyline3d`]
-#[cfg(feature = "alloc")]
-#[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
-pub struct BoxedPolyline3d {
-    /// The vertices of the polyline
-    pub vertices: Box<[Vec3]>,
-}
-
-#[cfg(feature = "alloc")]
-impl Primitive3d for BoxedPolyline3d {}
-
-#[cfg(feature = "alloc")]
-impl FromIterator<Vec3> for BoxedPolyline3d {
-    fn from_iter<I: IntoIterator<Item = Vec3>>(iter: I) -> Self {
-        let vertices: Vec<Vec3> = iter.into_iter().collect();
-        Self {
-            vertices: vertices.into_boxed_slice(),
-        }
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl BoxedPolyline3d {
-    /// Create a new `BoxedPolyline3d` from its vertices
     pub fn new(vertices: impl IntoIterator<Item = Vec3>) -> Self {
         Self::from_iter(vertices)
     }
@@ -1461,6 +1425,39 @@ impl<T: Primitive2d + Measured2d> Measured3d for Extrusion<T> {
     /// Get the volume of the extrusion
     fn volume(&self) -> f32 {
         2. * self.base_shape.area() * self.half_depth
+    }
+}
+
+crate::cfg::alloc! {
+    use alloc::{boxed::Box, vec::Vec};
+
+    /// A series of connected line segments in 3D space, allocated on the heap
+    /// in a `Box<[Vec3]>`.
+    ///
+    /// For a version without alloc: [`Polyline3d`]
+    #[derive(Clone, Debug, PartialEq)]
+    #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+    pub struct BoxedPolyline3d {
+        /// The vertices of the polyline
+        pub vertices: Box<[Vec3]>,
+    }
+
+    impl Primitive3d for BoxedPolyline3d {}
+
+    impl FromIterator<Vec3> for BoxedPolyline3d {
+        fn from_iter<I: IntoIterator<Item = Vec3>>(iter: I) -> Self {
+            let vertices: Vec<Vec3> = iter.into_iter().collect();
+            Self {
+                vertices: vertices.into_boxed_slice(),
+            }
+        }
+    }
+
+    impl BoxedPolyline3d {
+        /// Create a new `BoxedPolyline3d` from its vertices
+        pub fn new(vertices: impl IntoIterator<Item = Vec3>) -> Self {
+            Self::from_iter(vertices)
+        }
     }
 }
 

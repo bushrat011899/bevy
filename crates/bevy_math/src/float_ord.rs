@@ -161,13 +161,11 @@ mod tests {
         assert!(ONE >= ZERO);
     }
 
-    #[cfg(feature = "std")]
     #[test]
     fn float_ord_hash() {
         let hash = |num| {
-            let mut h = std::hash::DefaultHasher::new();
-            FloatOrd(num).hash(&mut h);
-            h.finish()
+            use core::hash::BuildHasher;
+            bevy_platform::hash::FixedHasher.hash_one(FloatOrd(num))
         };
 
         assert_ne!((-0.0f32).to_bits(), 0.0f32.to_bits());

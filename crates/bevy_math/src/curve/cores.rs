@@ -12,8 +12,7 @@ use super::interval::Interval;
 use core::fmt::Debug;
 use thiserror::Error;
 
-#[cfg(feature = "alloc")]
-use {alloc::vec::Vec, itertools::Itertools};
+use alloc::vec::Vec;
 
 #[cfg(feature = "bevy_reflect")]
 use bevy_reflect::Reflect;
@@ -116,7 +115,6 @@ impl<T> InterpolationDatum<T> {
 ///     }
 /// }
 /// ```
-#[cfg(feature = "alloc")]
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "bevy_reflect", derive(Reflect))]
@@ -151,7 +149,6 @@ pub enum EvenCoreError {
     UnboundedDomain,
 }
 
-#[cfg(feature = "alloc")]
 impl<T> EvenCore<T> {
     /// Create a new [`EvenCore`] from the specified `domain` and `samples`. The samples are
     /// regarded to be evenly spaced within the given domain interval, so that the outermost
@@ -320,7 +317,6 @@ pub fn even_interp(domain: Interval, samples: usize, t: f32) -> InterpolationDat
 /// [`domain`]: UnevenCore::domain
 /// [`sample_with`]: UnevenCore::sample_with
 /// [the provided constructor]: UnevenCore::new
-#[cfg(feature = "alloc")]
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "bevy_reflect", derive(Reflect))]
@@ -353,7 +349,6 @@ pub enum UnevenCoreError {
     },
 }
 
-#[cfg(feature = "alloc")]
 impl<T> UnevenCore<T> {
     /// Create a new [`UnevenCore`]. The given samples are filtered to finite times and
     /// sorted internally; if there are not at least 2 valid timed samples, an error will be
@@ -363,7 +358,7 @@ impl<T> UnevenCore<T> {
         let mut timed_samples = timed_samples
             .into_iter()
             .filter(|(t, _)| t.is_finite())
-            .collect_vec();
+            .collect::<Vec<_>>();
         timed_samples
             // Using `total_cmp` is fine because no NANs remain and because deduplication uses
             // `PartialEq` anyway (so -0.0 and 0.0 will be considered equal later regardless).
@@ -447,7 +442,7 @@ impl<T> UnevenCore<T> {
             .into_iter()
             .map(f)
             .zip(self.samples)
-            .collect_vec();
+            .collect::<Vec<_>>();
         timed_samples.sort_by(|(t1, _), (t2, _)| t1.total_cmp(t2));
         timed_samples.dedup_by_key(|(t, _)| *t);
         (self.times, self.samples) = timed_samples.into_iter().unzip();
@@ -461,7 +456,6 @@ impl<T> UnevenCore<T> {
 /// if the sample type can effectively be encoded as a fixed-length slice of values.
 ///
 /// [sampling width]: ChunkedUnevenCore::width
-#[cfg(feature = "alloc")]
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "bevy_reflect", derive(Reflect))]
@@ -516,7 +510,6 @@ pub enum ChunkedUnevenCoreError {
     },
 }
 
-#[cfg(feature = "alloc")]
 impl<T> ChunkedUnevenCore<T> {
     /// Create a new [`ChunkedUnevenCore`]. The given `times` are sorted, filtered to finite times,
     /// and deduplicated. See the [type-level documentation] for more information about this type.
@@ -532,8 +525,8 @@ impl<T> ChunkedUnevenCore<T> {
         values: impl IntoIterator<Item = T>,
         width: usize,
     ) -> Result<Self, ChunkedUnevenCoreError> {
-        let times = times.into_iter().collect_vec();
-        let values = values.into_iter().collect_vec();
+        let times = times.into_iter().collect::<Vec<_>>();
+        let values = values.into_iter().collect::<Vec<_>>();
 
         if width == 0 {
             return Err(ChunkedUnevenCoreError::ZeroWidth);
@@ -578,8 +571,8 @@ impl<T> ChunkedUnevenCore<T> {
         times: impl IntoIterator<Item = f32>,
         values: impl IntoIterator<Item = T>,
     ) -> Result<Self, ChunkedUnevenCoreError> {
-        let times = times.into_iter().collect_vec();
-        let values = values.into_iter().collect_vec();
+        let times = times.into_iter().collect::<Vec<_>>();
+        let values = values.into_iter().collect::<Vec<_>>();
 
         let times = filter_sort_dedup_times(times);
 
@@ -654,10 +647,9 @@ impl<T> ChunkedUnevenCore<T> {
 }
 
 /// Sort the given times, deduplicate them, and filter them to only finite times.
-#[cfg(feature = "alloc")]
 fn filter_sort_dedup_times(times: impl IntoIterator<Item = f32>) -> Vec<f32> {
     // Filter before sorting/deduplication so that NAN doesn't interfere with them.
-    let mut times = times.into_iter().filter(|t| t.is_finite()).collect_vec();
+    let mut times = times.into_iter().filter(|t| t.is_finite()).collect::<Vec<_>>();
     times.sort_by(f32::total_cmp);
     times.dedup();
     times
@@ -693,7 +685,7 @@ pub fn uneven_interp(times: &[f32], t: f32) -> InterpolationDatum<usize> {
     }
 }
 
-#[cfg(all(test, feature = "alloc"))]
+#[cfg(test)]
 mod tests {
     use super::{ChunkedUnevenCore, EvenCore, UnevenCore};
     use crate::curve::{cores::InterpolationDatum, interval};

@@ -37,13 +37,7 @@ serialize = [
 ## Allows access to the `std` crate. Enabling this feature will prevent compilation
 ## on `no_std` targets, but provides access to certain additional features on
 ## supported platforms.
-std = [
-  "bevy_app/std",
-  "bevy_ecs/std",
-  "bevy_math/std",
-  "bevy_input/std",
-  "bevy_window/std",
-]
+std = ["bevy_app/std", "bevy_ecs/std", "bevy_input/std", "bevy_window/std"]
 
 ## `critical-section` provides the building blocks for synchronization primitives
 ## on all platforms, including `no_std`.

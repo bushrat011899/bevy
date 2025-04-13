@@ -1,17 +1,10 @@
-#[cfg(feature = "alloc")]
-use {
-    super::{Measured2d, Triangle2d},
-    alloc::{collections::BTreeMap, vec::Vec},
-};
+use super::{Measured2d, Triangle2d};
+use alloc::{collections::BTreeMap, vec::Vec};
 
 use core::cmp::Ordering;
 
 use crate::Vec2;
 
-#[cfg_attr(
-    not(feature = "alloc"),
-    expect(dead_code, reason = "this type is only used with the alloc feature")
-)]
 #[derive(Debug, Clone, Copy)]
 enum Endpoint {
     Left,
@@ -25,20 +18,12 @@ enum Endpoint {
 ///
 /// This is the order expected by the [`SweepLine`].
 #[derive(Debug, Clone, Copy)]
-#[cfg_attr(
-    not(feature = "alloc"),
-    allow(dead_code, reason = "this type is only used with the alloc feature")
-)]
 struct SweepLineEvent {
     segment: Segment,
     /// Type of the vertex (left or right)
     endpoint: Endpoint,
 }
 impl SweepLineEvent {
-    #[cfg_attr(
-        not(feature = "alloc"),
-        allow(dead_code, reason = "this type is only used with the alloc feature")
-    )]
     fn position(&self) -> Vec2 {
         match self.endpoint {
             Endpoint::Left => self.segment.left,
@@ -64,21 +49,15 @@ impl Ord for SweepLineEvent {
 }
 
 /// Orders 2D points according to the order expected by the sweep line and event queue from -X to +X and then -Y to Y.
-#[cfg_attr(
-    not(feature = "alloc"),
-    allow(dead_code, reason = "this type is only used with the alloc feature")
-)]
 fn xy_order(a: Vec2, b: Vec2) -> Ordering {
     a.x.total_cmp(&b.x).then_with(|| a.y.total_cmp(&b.y))
 }
 
 /// The event queue holds an ordered list of all events the [`SweepLine`] will encounter when checking the current polygon.
-#[cfg(feature = "alloc")]
 #[derive(Debug, Clone)]
 struct EventQueue {
     events: Vec<SweepLineEvent>,
 }
-#[cfg(feature = "alloc")]
 impl EventQueue {
     /// Initialize a new `EventQueue` with all events from the polygon represented by `vertices`.
     ///
@@ -151,10 +130,6 @@ impl Ord for Segment {
 }
 
 /// Holds information about which segment is above and which is below a given [`Segment`]
-#[cfg_attr(
-    not(feature = "alloc"),
-    expect(dead_code, reason = "this type is only used with the alloc feature")
-)]
 #[derive(Debug, Clone, Copy)]
 struct SegmentOrder {
     above: Option<usize>,
@@ -165,13 +140,11 @@ struct SegmentOrder {
 ///
 /// It can be thought of as a vertical line sweeping from -X to +X across the polygon that keeps track of the order of the segments
 /// the sweep line is intersecting at any given moment.
-#[cfg(feature = "alloc")]
 #[derive(Debug, Clone)]
 struct SweepLine<'a> {
     vertices: &'a [Vec2],
     tree: BTreeMap<Segment, SegmentOrder>,
 }
-#[cfg(feature = "alloc")]
 impl<'a> SweepLine<'a> {
     fn new(vertices: &'a [Vec2]) -> Self {
         Self {
@@ -262,13 +235,6 @@ impl<'a> SweepLine<'a> {
 /// Test what side of the line through `p1` and `p2` `q` is.
 ///
 /// The result will be `0` if the `q` is on the segment, negative for one side and positive for the other.
-#[cfg_attr(
-    not(feature = "alloc"),
-    expect(
-        dead_code,
-        reason = "this function is only used with the alloc feature"
-    )
-)]
 #[inline(always)]
 fn point_side(p1: Vec2, p2: Vec2, q: Vec2) -> f32 {
     (p2.x - p1.x) * (q.y - p1.y) - (q.x - p1.x) * (p2.y - p1.y)
@@ -284,7 +250,6 @@ fn point_side(p1: Vec2, p2: Vec2, q: Vec2) -> f32 {
 ///
 /// The algorithm used is the Shamos-Hoey algorithm, a version of the Bentley-Ottman algorithm adapted to only detect whether any intersections exist.
 /// This function will run in O(n * log n)
-#[cfg(feature = "alloc")]
 pub fn is_polygon_simple(vertices: &[Vec2]) -> bool {
     if vertices.len() < 3 {
         return true;
@@ -322,7 +287,8 @@ pub fn is_polygon_simple(vertices: &[Vec2]) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::{primitives::polygon::is_polygon_simple, Vec2};
+    use super::is_polygon_simple;
+    use crate::Vec2;
 
     #[test]
     fn complex_polygon() {
