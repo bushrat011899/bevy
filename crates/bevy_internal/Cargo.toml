@@ -298,7 +298,6 @@ configurable_error_handler = ["bevy_ecs/configurable_error_handler"]
 std = [
   "bevy_a11y?/std",
   "bevy_app/std",
-  "bevy_color?/std",
   "bevy_diagnostic/std",
   "bevy_ecs/std",
   "bevy_input/std",
@@ -329,7 +328,6 @@ critical-section = [
 
 # Uses the `libm` maths library instead of the one provided in `std` and `core`.
 libm = [
-  "bevy_color?/libm",
   "bevy_input/libm",
   "bevy_input_focus?/libm",
   "bevy_math/libm",
@@ -393,7 +391,6 @@ bevy_animation = { path = "../bevy_animation", optional = true, version = "0.16.
 bevy_asset = { path = "../bevy_asset", optional = true, version = "0.16.0-dev" }
 bevy_audio = { path = "../bevy_audio", optional = true, version = "0.16.0-dev" }
 bevy_color = { path = "../bevy_color", optional = true, version = "0.16.0-dev", default-features = false, features = [
-  "alloc",
   "bevy_reflect",
 ] }
 bevy_core_pipeline = { path = "../bevy_core_pipeline", optional = true, version = "0.16.0-dev" }

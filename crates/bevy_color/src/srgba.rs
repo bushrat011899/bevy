@@ -2,12 +2,15 @@ use crate::{
     color_difference::EuclideanDistance, impl_componentwise_vector_space, Alpha, ColorToComponents,
     ColorToPacked, Gray, LinearRgba, Luminance, Mix, StandardColor, Xyza,
 };
-#[cfg(feature = "alloc")]
-use alloc::{format, string::String};
 use bevy_math::{ops, Vec3, Vec4};
+use thiserror::Error;
+
 #[cfg(feature = "bevy_reflect")]
 use bevy_reflect::prelude::*;
-use thiserror::Error;
+
+crate::cfg::alloc! {
+    use alloc::{format, string::String};
+}
 
 /// Non-linear standard RGB with alpha.
 #[doc = include_str!("../docs/conversion.md")]
@@ -172,13 +175,14 @@ impl Srgba {
         }
     }
 
-    /// Convert this color to CSS-style hexadecimal notation.
-    #[cfg(feature = "alloc")]
-    pub fn to_hex(&self) -> String {
-        let [r, g, b, a] = self.to_u8_array();
-        match a {
-            255 => format!("#{:02X}{:02X}{:02X}", r, g, b),
-            _ => format!("#{:02X}{:02X}{:02X}{:02X}", r, g, b, a),
+    crate::cfg::alloc! {
+        /// Convert this color to CSS-style hexadecimal notation.
+        pub fn to_hex(&self) -> String {
+            let [r, g, b, a] = self.to_u8_array();
+            match a {
+                255 => format!("#{:02X}{:02X}{:02X}", r, g, b),
+                _ => format!("#{:02X}{:02X}{:02X}{:02X}", r, g, b, a),
+            }
         }
     }
 

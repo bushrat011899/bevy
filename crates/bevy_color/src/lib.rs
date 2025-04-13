@@ -90,16 +90,43 @@
 //! println!("Hsla: {:?}", hsla);
 //! ```
 
-#[cfg(feature = "std")]
-extern crate std;
+/// Provides the state of features in this crate.
+pub mod cfg {
+    pub use bevy_platform::cfg::*;
 
-#[cfg(feature = "alloc")]
-extern crate alloc;
+    define_alias! {
+        feature = "serialize" => {
+            /// Provides serialization support using `serde`.
+            serialize
+        }
+        feature = "bevy_reflect" => {
+            /// Provides reflection support using `bevy_reflect`.
+            bevy_reflect
+        }
+        feature = "wgpu-types" => {
+            /// Integrates with `wgpu` via `wgpu-types`.
+            wgpu_types
+        }
+        feature = "encase" => {
+            /// Integrates with GPU programming via `encase`.
+            encase
+        }
+    }
+}
+
+cfg::std! {
+    extern crate std;
+}
+
+cfg::alloc! {
+    extern crate alloc;
+
+    mod color_gradient;
+    pub use color_gradient::*;
+}
 
 mod color;
 pub mod color_difference;
-#[cfg(feature = "alloc")]
-mod color_gradient;
 mod color_ops;
 mod color_range;
 mod hsla;
@@ -129,8 +156,6 @@ pub mod prelude {
 }
 
 pub use color::*;
-#[cfg(feature = "alloc")]
-pub use color_gradient::*;
 pub use color_ops::*;
 pub use color_range::*;
 pub use hsla::*;
