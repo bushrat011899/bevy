@@ -18,8 +18,71 @@
 )]
 #![no_std]
 
-#[cfg(feature = "std")]
-extern crate std;
+/// Provides the state of features in this crate.
+pub mod cfg {
+    pub use bevy_platform::cfg::*;
+
+    define_alias! {
+        feature = "serialize" => {
+            /// Adds serialization support through `serde`.
+            serialize
+        }
+        feature = "bevy_reflect" => {
+            /// Adds runtime reflection support using `bevy_reflect`.
+            bevy_reflect
+        }
+        feature = "configurable_error_handler" => {
+            /// Use the configurable global error handler as the default error handler.
+            ///
+            /// This is typically used to turn panics from the ECS into loggable errors.
+            /// This may be useful for production builds,
+            /// but can result in a measurable performance impact, especially for commands.
+            configurable_error_handler
+        }
+        feature = "backtrace" => {
+            /// Enables automatic backtrace capturing in BevyError
+            backtrace
+        }
+        feature = "trace" => {
+            /// Enables `tracing` integration, allowing spans and other metrics to be reported
+            /// through that framework.
+            trace
+        }
+        feature = "detailed_trace" => {
+            /// Enables a more detailed set of traces which may be noisy if left on by default.
+            detailed_trace
+        }
+        feature = "bevy_debug_stepping" => {
+            /// Provides system stepping support, allowing them to be paused, stepped, and other
+            /// debug operations which can help with diagnosing certain behaviors.
+            bevy_debug_stepping
+        }
+        feature = "track_location" => {
+            /// Provides more detailed tracking of the cause of various effects within the ECS.
+            /// This will often provide more detailed error messages.
+            track_location
+        }
+    }
+
+    pub use bevy_tasks::cfg::{multi_threaded, single_threaded};
+    pub use bevy_utils::cfg::parallel;
+
+    // Always ensure reflect_functions is available, even if bevy_reflect isn't included.
+    switch! {
+        bevy_reflect => {
+            #[doc(inline)]
+            pub use bevy_reflect::cfg::functions as reflect_functions;
+        }
+        _ => {
+            #[doc(inline)]
+            pub use noop as reflect_functions;
+        }
+    }
+}
+
+cfg::std! {
+    extern crate std;
+}
 
 #[cfg(target_pointer_width = "16")]
 compile_error!("bevy_ecs cannot safely compile for a 16-bit platform.");
@@ -101,19 +164,22 @@ pub mod prelude {
         },
     };
 
-    #[doc(hidden)]
-    #[cfg(feature = "std")]
-    pub use crate::system::ParallelCommands;
+    crate::cfg::parallel! {
+        #[doc(hidden)]
+        pub use crate::system::ParallelCommands;
+    }
 
-    #[doc(hidden)]
-    #[cfg(feature = "bevy_reflect")]
-    pub use crate::reflect::{
-        AppTypeRegistry, ReflectComponent, ReflectFromWorld, ReflectResource,
-    };
+    crate::cfg::bevy_reflect! {
+        #[doc(hidden)]
+        pub use crate::reflect::{
+            AppTypeRegistry, ReflectComponent, ReflectFromWorld, ReflectResource,
+        };
+    }
 
-    #[doc(hidden)]
-    #[cfg(feature = "reflect_functions")]
-    pub use crate::reflect::AppFunctionRegistry;
+    crate::cfg::reflect_functions! {
+        #[doc(hidden)]
+        pub use crate::reflect::AppFunctionRegistry;
+    }
 }
 
 /// Exports used by macros.

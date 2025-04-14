@@ -1247,10 +1247,12 @@ mod tests {
             assert_executor_supports_stepping!(ExecutorKind::SingleThreaded);
         }
 
-        /// verify the [`MultiThreadedExecutor`] supports stepping
-        #[test]
-        fn multi_threaded_executor() {
-            assert_executor_supports_stepping!(ExecutorKind::MultiThreaded);
+        crate::cfg::multi_threaded! {
+            /// verify the [`MultiThreadedExecutor`] supports stepping
+            #[test]
+            fn multi_threaded_executor() {
+                assert_executor_supports_stepping!(ExecutorKind::MultiThreaded);
+            }
         }
     }
 }

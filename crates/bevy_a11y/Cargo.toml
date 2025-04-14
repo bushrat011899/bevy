@@ -9,7 +9,7 @@ license = "MIT OR Apache-2.0"
 keywords = ["bevy", "accessibility", "a11y"]
 
 [features]
-default = ["std", "bevy_reflect", "bevy_ecs/async_executor"]
+default = ["std", "bevy_reflect"]
 
 # Functionality
 
@@ -28,11 +28,11 @@ serialize = ["dep:serde", "bevy_ecs/serialize", "accesskit/serde"]
 ## Allows access to the `std` crate. Enabling this feature will prevent compilation
 ## on `no_std` targets, but provides access to certain additional features on
 ## supported platforms.
-std = ["bevy_app/std", "bevy_ecs/std"]
+std = ["bevy_app/std"]
 
 ## `critical-section` provides the building blocks for synchronization primitives
 ## on all platforms, including `no_std`.
-critical-section = ["bevy_app/critical-section", "bevy_ecs/critical-section"]
+critical-section = ["bevy_app/critical-section"]
 
 [dependencies]
 # bevy

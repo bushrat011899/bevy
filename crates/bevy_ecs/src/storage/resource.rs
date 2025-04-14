@@ -8,8 +8,14 @@ use alloc::string::String;
 use bevy_ptr::{OwningPtr, Ptr, UnsafeCellDeref};
 use core::{cell::UnsafeCell, mem::ManuallyDrop, panic::Location};
 
-#[cfg(feature = "std")]
-use std::thread::ThreadId;
+crate::cfg::switch! {
+    crate::cfg::std => {
+        use std::thread::ThreadId;
+    }
+    _ => {
+        use core::num::NonZero<u64> as ThreadId;
+    }
+}
 
 /// The type-erased backing storage and metadata for a single resource within a [`World`].
 ///
@@ -20,13 +26,8 @@ pub struct ResourceData<const SEND: bool> {
     data: ManuallyDrop<BlobVec>,
     added_ticks: UnsafeCell<Tick>,
     changed_ticks: UnsafeCell<Tick>,
-    #[cfg_attr(
-        not(feature = "std"),
-        expect(dead_code, reason = "currently only used with the std feature")
-    )]
     type_name: String,
     id: ArchetypeComponentId,
-    #[cfg(feature = "std")]
     origin_thread_id: Option<ThreadId>,
     changed_by: MaybeLocation<UnsafeCell<&'static Location<'static>>>,
 }
@@ -40,9 +41,10 @@ impl<const SEND: bool> Drop for ResourceData<SEND> {
             // If this thread is already panicking, panicking again will cause
             // the entire process to abort. In this case we choose to avoid
             // dropping or checking this altogether and just leak the column.
-            #[cfg(feature = "std")]
-            if std::thread::panicking() {
-                return;
+            crate::cfg::std! {
+                if std::thread::panicking() {
+                    return;
+                }
             }
             self.validate_access();
         }
@@ -67,25 +69,19 @@ impl<const SEND: bool> ResourceData<SEND> {
     #[inline]
     fn validate_access(&self) {
         if SEND {
-            #[cfg_attr(
-                not(feature = "std"),
-                expect(
-                    clippy::needless_return,
-                    reason = "needless until no_std is addressed (see below)",
-                )
-            )]
             return;
         }
 
-        #[cfg(feature = "std")]
-        if self.origin_thread_id != Some(std::thread::current().id()) {
-            // Panic in tests, as testing for aborting is nearly impossible
-            panic!(
-                "Attempted to access or drop non-send resource {} from thread {:?} on a thread {:?}. This is not allowed. Aborting.",
-                self.type_name,
-                self.origin_thread_id,
-                std::thread::current().id()
-            );
+        crate::cfg::std! {
+            if self.origin_thread_id != Some(std::thread::current().id()) {
+                // Panic in tests, as testing for aborting is nearly impossible
+                panic!(
+                    "Attempted to access or drop non-send resource {} from thread {:?} on a thread {:?}. This is not allowed. Aborting.",
+                    self.type_name,
+                    self.origin_thread_id,
+                    std::thread::current().id()
+                );
+            }
         }
 
         // TODO: Handle no_std non-send.
@@ -202,9 +198,10 @@ impl<const SEND: bool> ResourceData<SEND> {
                 self.data.replace_unchecked(Self::ROW, value);
             }
         } else {
-            #[cfg(feature = "std")]
-            if !SEND {
-                self.origin_thread_id = Some(std::thread::current().id());
+            crate::cfg::std! {
+                if !SEND {
+                    self.origin_thread_id = Some(std::thread::current().id());
+                }
             }
             self.data.push(value);
             *self.added_ticks.deref_mut() = change_tick;
@@ -242,9 +239,10 @@ impl<const SEND: bool> ResourceData<SEND> {
                 self.data.replace_unchecked(Self::ROW, value);
             }
         } else {
-            #[cfg(feature = "std")]
-            if !SEND {
-                self.origin_thread_id = Some(std::thread::current().id());
+            crate::cfg::std! {
+                if !SEND {
+                    self.origin_thread_id = Some(std::thread::current().id());
+                }
             }
             self.data.push(value);
         }
@@ -396,7 +394,6 @@ impl<const SEND: bool> Resources<SEND> {
                 changed_ticks: UnsafeCell::new(Tick::new(0)),
                 type_name: String::from(component_info.name()),
                 id: f(),
-                #[cfg(feature = "std")]
                 origin_thread_id: None,
                 changed_by: MaybeLocation::caller().map(UnsafeCell::new),
             }

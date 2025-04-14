@@ -1,14 +1,13 @@
 pub mod command;
 pub mod entity_command;
 
-#[cfg(feature = "std")]
-mod parallel_scope;
+crate::cfg::parallel! {
+    mod parallel_scope;
+    pub use parallel_scope::*;
+}
 
 pub use command::Command;
 pub use entity_command::EntityCommand;
-
-#[cfg(feature = "std")]
-pub use parallel_scope::*;
 
 use alloc::boxed::Box;
 use core::marker::PhantomData;

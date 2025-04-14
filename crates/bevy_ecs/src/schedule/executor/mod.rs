@@ -1,15 +1,15 @@
-#[cfg(feature = "std")]
-mod multi_threaded;
 mod simple;
 mod single_threaded;
+
+crate::cfg::multi_threaded! {
+    mod multi_threaded;
+    pub use self::multi_threaded::{MainThreadExecutor, MultiThreadedExecutor};
+}
 
 use alloc::{borrow::Cow, vec, vec::Vec};
 use core::any::TypeId;
 
 pub use self::{simple::SimpleExecutor, single_threaded::SingleThreadedExecutor};
-
-#[cfg(feature = "std")]
-pub use self::multi_threaded::{MainThreadExecutor, MultiThreadedExecutor};
 
 use fixedbitset::FixedBitSet;
 
@@ -38,26 +38,58 @@ pub(super) trait SystemExecutor: Send + Sync {
     fn set_apply_final_deferred(&mut self, value: bool);
 }
 
-/// Specifies how a [`Schedule`](super::Schedule) will be run.
-///
-/// The default depends on the target platform:
-///  - [`SingleThreaded`](ExecutorKind::SingleThreaded) on Wasm.
-///  - [`MultiThreaded`](ExecutorKind::MultiThreaded) everywhere else.
-#[derive(PartialEq, Eq, Default, Debug, Copy, Clone)]
-pub enum ExecutorKind {
-    /// Runs the schedule using a single thread.
-    ///
-    /// Useful if you're dealing with a single-threaded environment, saving your threads for
-    /// other things, or just trying minimize overhead.
-    #[cfg_attr(any(target_arch = "wasm32", not(feature = "multi_threaded")), default)]
-    SingleThreaded,
-    /// Like [`SingleThreaded`](ExecutorKind::SingleThreaded) but calls [`apply_deferred`](crate::system::System::apply_deferred)
-    /// immediately after running each system.
-    Simple,
-    /// Runs the schedule using a thread pool. Non-conflicting systems can run in parallel.
-    #[cfg(feature = "std")]
-    #[cfg_attr(all(not(target_arch = "wasm32"), feature = "multi_threaded"), default)]
-    MultiThreaded,
+crate::cfg::switch! {
+    crate::cfg::multi_threaded => {
+        /// Specifies how a [`Schedule`](super::Schedule) will be run.
+        ///
+        /// The default depends on the target platform:
+        ///  - [`SingleThreaded`](ExecutorKind::SingleThreaded) on Wasm.
+        ///  - [`MultiThreaded`](ExecutorKind::MultiThreaded) everywhere else.
+        #[derive(PartialEq, Eq, Debug, Copy, Clone)]
+        pub enum ExecutorKind {
+            /// Runs the schedule using a single thread.
+            ///
+            /// Useful if you're dealing with a single-threaded environment, saving your threads for
+            /// other things, or just trying minimize overhead.
+            SingleThreaded,
+            /// Like [`SingleThreaded`](ExecutorKind::SingleThreaded) but calls [`apply_deferred`](crate::system::System::apply_deferred)
+            /// immediately after running each system.
+            Simple,
+            /// Runs the schedule using a thread pool. Non-conflicting systems can run in parallel.
+            MultiThreaded,
+        }
+    }
+    _ => {
+        /// Specifies how a [`Schedule`](super::Schedule) will be run.
+        ///
+        /// The default depends on the target platform:
+        ///  - [`SingleThreaded`](ExecutorKind::SingleThreaded) on Wasm.
+        ///  - [`MultiThreaded`](ExecutorKind::MultiThreaded) everywhere else.
+        #[derive(PartialEq, Eq, Debug, Copy, Clone)]
+        pub enum ExecutorKind {
+            /// Runs the schedule using a single thread.
+            ///
+            /// Useful if you're dealing with a single-threaded environment, saving your threads for
+            /// other things, or just trying minimize overhead.
+            SingleThreaded,
+            /// Like [`SingleThreaded`](ExecutorKind::SingleThreaded) but calls [`apply_deferred`](crate::system::System::apply_deferred)
+            /// immediately after running each system.
+            Simple,
+        }
+    }
+}
+
+impl Default for ExecutorKind {
+    fn default() -> Self {
+        crate::cfg::switch! {{
+            crate::cfg::multi_threaded => {
+                Self::MultiThreaded
+            }
+            _ => {
+                Self::SingleThreaded
+            }
+        }}
+    }
 }
 
 /// Holds systems and conditions of a [`Schedule`](super::Schedule) sorted in topological order
@@ -75,17 +107,9 @@ pub struct SystemSchedule {
     pub(super) system_conditions: Vec<Vec<BoxedCondition>>,
     /// Indexed by system node id.
     /// Number of systems that the system immediately depends on.
-    #[cfg_attr(
-        not(feature = "std"),
-        expect(dead_code, reason = "currently only used with the std feature")
-    )]
     pub(super) system_dependencies: Vec<usize>,
     /// Indexed by system node id.
     /// List of systems that immediately depend on the system.
-    #[cfg_attr(
-        not(feature = "std"),
-        expect(dead_code, reason = "currently only used with the std feature")
-    )]
     pub(super) system_dependents: Vec<Vec<usize>>,
     /// Indexed by system node id.
     /// List of sets containing the system that have conditions
@@ -284,10 +308,6 @@ mod __rust_begin_short_backtrace {
 
     /// # Safety
     /// See `ReadOnlySystem::run_unsafe`.
-    #[cfg_attr(
-        not(feature = "std"),
-        expect(dead_code, reason = "currently only used with the std feature")
-    )]
     #[inline(never)]
     pub(super) unsafe fn readonly_run_unsafe<O: 'static>(
         system: &mut dyn ReadOnlySystem<In = (), Out = O>,
@@ -324,11 +344,20 @@ mod tests {
     #[derive(Component)]
     struct TestComponent;
 
-    const EXECUTORS: [ExecutorKind; 3] = [
-        ExecutorKind::Simple,
-        ExecutorKind::SingleThreaded,
-        ExecutorKind::MultiThreaded,
-    ];
+    crate::cfg::multi_threaded! {
+        if {
+            const EXECUTORS: [ExecutorKind; 3] = [
+                ExecutorKind::Simple,
+                ExecutorKind::SingleThreaded,
+                ExecutorKind::MultiThreaded,
+            ];
+        } else {
+            const EXECUTORS: [ExecutorKind; 2] = [
+                ExecutorKind::Simple,
+                ExecutorKind::SingleThreaded,
+            ];
+        }
+    }
 
     #[derive(Resource, Default)]
     struct TestState {
@@ -401,15 +430,17 @@ mod tests {
         schedule.run(&mut world);
     }
 
-    #[test]
-    #[should_panic]
-    fn missing_resource_panics_multi_threaded() {
-        let mut world = World::new();
-        let mut schedule = Schedule::default();
+    crate::cfg::multi_threaded! {
+        #[test]
+        #[should_panic]
+        fn missing_resource_panics_multi_threaded() {
+            let mut world = World::new();
+            let mut schedule = Schedule::default();
 
-        schedule.set_executor_kind(ExecutorKind::MultiThreaded);
-        schedule.add_systems(look_for_missing_resource);
-        schedule.run(&mut world);
+            schedule.set_executor_kind(ExecutorKind::MultiThreaded);
+            schedule.add_systems(look_for_missing_resource);
+            schedule.run(&mut world);
+        }
     }
 
     #[test]

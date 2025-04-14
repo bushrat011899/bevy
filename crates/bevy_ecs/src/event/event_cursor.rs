@@ -1,9 +1,11 @@
 use bevy_ecs::event::{
     Event, EventIterator, EventIteratorWithId, EventMutIterator, EventMutIteratorWithId, Events,
 };
-#[cfg(feature = "multi_threaded")]
-use bevy_ecs::event::{EventMutParIter, EventParIter};
 use core::marker::PhantomData;
+
+crate::cfg::multi_threaded! {
+    use bevy_ecs::event::{EventMutParIter, EventParIter};
+}
 
 /// Stores the state for an [`EventReader`] or [`EventMutator`].
 ///
@@ -97,16 +99,16 @@ impl<E: Event> EventCursor<E> {
         EventMutIteratorWithId::new(self, events)
     }
 
-    /// See [`EventReader::par_read`](super::EventReader::par_read)
-    #[cfg(feature = "multi_threaded")]
-    pub fn par_read<'a>(&'a mut self, events: &'a Events<E>) -> EventParIter<'a, E> {
-        EventParIter::new(self, events)
-    }
+    crate::cfg::multi_threaded! {
+        /// See [`EventReader::par_read`](super::EventReader::par_read)
+        pub fn par_read<'a>(&'a mut self, events: &'a Events<E>) -> EventParIter<'a, E> {
+            EventParIter::new(self, events)
+        }
 
-    /// See [`EventMutator::par_read`](super::EventMutator::par_read)
-    #[cfg(feature = "multi_threaded")]
-    pub fn par_read_mut<'a>(&'a mut self, events: &'a mut Events<E>) -> EventMutParIter<'a, E> {
-        EventMutParIter::new(self, events)
+        /// See [`EventMutator::par_read`](super::EventMutator::par_read)
+        pub fn par_read_mut<'a>(&'a mut self, events: &'a mut Events<E>) -> EventMutParIter<'a, E> {
+            EventMutParIter::new(self, events)
+        }
     }
 
     /// See [`EventReader::len`](super::EventReader::len)

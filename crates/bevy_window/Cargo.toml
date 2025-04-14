@@ -36,7 +36,6 @@ serialize = [
 ## supported platforms.
 std = [
   "bevy_app/std",
-  "bevy_ecs/std",
   "bevy_input/std",
   "serde?/std",
   "raw-window-handle/std",

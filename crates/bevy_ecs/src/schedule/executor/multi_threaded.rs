@@ -5,12 +5,14 @@ use bevy_utils::{default, syncunsafecell::SyncUnsafeCell};
 use concurrent_queue::ConcurrentQueue;
 use core::{any::Any, panic::AssertUnwindSafe};
 use fixedbitset::FixedBitSet;
-#[cfg(feature = "std")]
-use std::eprintln;
 use std::sync::{Mutex, MutexGuard};
 
 #[cfg(feature = "trace")]
 use tracing::{info_span, Span};
+
+crate::cfg::std! {
+    use std::eprintln;
+}
 
 use crate::{
     archetype::ArchetypeComponentId,
@@ -282,10 +284,11 @@ impl<'scope, 'env: 'scope, 'sys> Context<'scope, 'env, 'sys> {
             .push(SystemResult { system_index })
             .unwrap_or_else(|error| unreachable!("{}", error));
         if let Err(payload) = res {
-            #[cfg(feature = "std")]
-            #[expect(clippy::print_stderr, reason = "Allowed behind `std` feature gate.")]
-            {
-                eprintln!("Encountered a panic in system `{}`!", &*system.name());
+            crate::cfg::std! {
+                #[expect(clippy::print_stderr, reason = "Allowed behind `std` feature gate.")]
+                {
+                    eprintln!("Encountered a panic in system `{}`!", &*system.name());
+                }
             }
             // set the payload to propagate the error
             {
@@ -764,14 +767,16 @@ fn apply_deferred(
             system.apply_deferred(world);
         }));
         if let Err(payload) = res {
-            #[cfg(feature = "std")]
-            #[expect(clippy::print_stderr, reason = "Allowed behind `std` feature gate.")]
-            {
-                eprintln!(
-                    "Encountered a panic when applying buffers for system `{}`!",
-                    &*system.name()
-                );
+            crate::cfg::std! {
+                #[expect(clippy::print_stderr, reason = "Allowed behind `std` feature gate.")]
+                {
+                    eprintln!(
+                        "Encountered a panic when applying buffers for system `{}`!",
+                        &*system.name()
+                    );
+                }
             }
+            
             return Err(payload);
         }
     }

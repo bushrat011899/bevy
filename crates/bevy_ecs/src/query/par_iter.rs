@@ -83,74 +83,75 @@ impl<'w, 's, D: QueryData, F: QueryFilter> QueryParIter<'w, 's, D, F> {
             func(&mut init, item);
             init
         };
-        #[cfg(any(target_arch = "wasm32", not(feature = "multi_threaded")))]
-        {
-            let init = init();
-            // SAFETY:
-            // This method can only be called once per instance of QueryParIter,
-            // which ensures that mutable queries cannot be executed multiple times at once.
-            // Mutable instances of QueryParIter can only be created via an exclusive borrow of a
-            // Query or a World, which ensures that multiple aliasing QueryParIters cannot exist
-            // at the same time.
-            unsafe {
-                self.state
-                    .query_unchecked_manual_with_ticks(self.world, self.last_run, self.this_run)
-                    .into_iter()
-                    .fold(init, func);
-            }
-        }
-        #[cfg(all(not(target_arch = "wasm32"), feature = "multi_threaded"))]
-        {
-            let thread_count = bevy_tasks::ComputeTaskPool::get().thread_num();
-            if thread_count <= 1 {
+        crate::cfg::switch! {
+            crate::cfg::single_threaded => {
                 let init = init();
-                // SAFETY: See the safety comment above.
+                // SAFETY:
+                // This method can only be called once per instance of QueryParIter,
+                // which ensures that mutable queries cannot be executed multiple times at once.
+                // Mutable instances of QueryParIter can only be created via an exclusive borrow of a
+                // Query or a World, which ensures that multiple aliasing QueryParIters cannot exist
+                // at the same time.
                 unsafe {
                     self.state
                         .query_unchecked_manual_with_ticks(self.world, self.last_run, self.this_run)
                         .into_iter()
                         .fold(init, func);
                 }
-            } else {
-                // Need a batch size of at least 1.
-                let batch_size = self.get_batch_size(thread_count).max(1);
-                // SAFETY: See the safety comment above.
-                unsafe {
-                    self.state.par_fold_init_unchecked_manual(
-                        init,
-                        self.world,
-                        batch_size,
-                        func,
-                        self.last_run,
-                        self.this_run,
-                    );
+            }
+            _ => {
+                let thread_count = bevy_tasks::ComputeTaskPool::get().thread_num();
+                if thread_count <= 1 {
+                    let init = init();
+                    // SAFETY: See the safety comment above.
+                    unsafe {
+                        self.state
+                            .query_unchecked_manual_with_ticks(self.world, self.last_run, self.this_run)
+                            .into_iter()
+                            .fold(init, func);
+                    }
+                } else {
+                    // Need a batch size of at least 1.
+                    let batch_size = self.get_batch_size(thread_count).max(1);
+                    // SAFETY: See the safety comment above.
+                    unsafe {
+                        self.state.par_fold_init_unchecked_manual(
+                            init,
+                            self.world,
+                            batch_size,
+                            func,
+                            self.last_run,
+                            self.this_run,
+                        );
+                    }
                 }
             }
         }
     }
 
-    #[cfg(all(not(target_arch = "wasm32"), feature = "multi_threaded"))]
-    fn get_batch_size(&self, thread_count: usize) -> usize {
-        let max_items = || {
-            let id_iter = self.state.matched_storage_ids.iter();
-            if self.state.is_dense {
-                // SAFETY: We only access table metadata.
-                let tables = unsafe { &self.world.world_metadata().storages().tables };
-                id_iter
-                    // SAFETY: The if check ensures that matched_storage_ids stores TableIds
-                    .map(|id| unsafe { tables[id.table_id].entity_count() })
-                    .max()
-            } else {
-                let archetypes = &self.world.archetypes();
-                id_iter
-                    // SAFETY: The if check ensures that matched_storage_ids stores ArchetypeIds
-                    .map(|id| unsafe { archetypes[id.archetype_id].len() })
-                    .max()
-            }
-            .unwrap_or(0)
-        };
-        self.batching_strategy
-            .calc_batch_size(max_items, thread_count)
+    crate::cfg::multi_threaded! {
+        fn get_batch_size(&self, thread_count: usize) -> usize {
+            let max_items = || {
+                let id_iter = self.state.matched_storage_ids.iter();
+                if self.state.is_dense {
+                    // SAFETY: We only access table metadata.
+                    let tables = unsafe { &self.world.world_metadata().storages().tables };
+                    id_iter
+                        // SAFETY: The if check ensures that matched_storage_ids stores TableIds
+                        .map(|id| unsafe { tables[id.table_id].entity_count() })
+                        .max()
+                } else {
+                    let archetypes = &self.world.archetypes();
+                    id_iter
+                        // SAFETY: The if check ensures that matched_storage_ids stores ArchetypeIds
+                        .map(|id| unsafe { archetypes[id.archetype_id].len() })
+                        .max()
+                }
+                .unwrap_or(0)
+            };
+            self.batching_strategy
+                .calc_batch_size(max_items, thread_count)
+        }
     }
 }
 
@@ -253,57 +254,58 @@ impl<'w, 's, D: ReadOnlyQueryData, F: QueryFilter, E: EntityEquivalent + Sync>
             func(&mut init, item);
             init
         };
-        #[cfg(any(target_arch = "wasm32", not(feature = "multi_threaded")))]
-        {
-            let init = init();
-            // SAFETY:
-            // This method can only be called once per instance of QueryParManyIter,
-            // which ensures that mutable queries cannot be executed multiple times at once.
-            // Mutable instances of QueryParManyUniqueIter can only be created via an exclusive borrow of a
-            // Query or a World, which ensures that multiple aliasing QueryParManyIters cannot exist
-            // at the same time.
-            unsafe {
-                self.state
-                    .query_unchecked_manual_with_ticks(self.world, self.last_run, self.this_run)
-                    .iter_many_inner(&self.entity_list)
-                    .fold(init, func);
-            }
-        }
-        #[cfg(all(not(target_arch = "wasm32"), feature = "multi_threaded"))]
-        {
-            let thread_count = bevy_tasks::ComputeTaskPool::get().thread_num();
-            if thread_count <= 1 {
+        crate::cfg::switch! {
+            crate::cfg::single_threaded => {
                 let init = init();
-                // SAFETY: See the safety comment above.
+                // SAFETY:
+                // This method can only be called once per instance of QueryParManyIter,
+                // which ensures that mutable queries cannot be executed multiple times at once.
+                // Mutable instances of QueryParManyUniqueIter can only be created via an exclusive borrow of a
+                // Query or a World, which ensures that multiple aliasing QueryParManyIters cannot exist
+                // at the same time.
                 unsafe {
                     self.state
                         .query_unchecked_manual_with_ticks(self.world, self.last_run, self.this_run)
                         .iter_many_inner(&self.entity_list)
                         .fold(init, func);
                 }
-            } else {
-                // Need a batch size of at least 1.
-                let batch_size = self.get_batch_size(thread_count).max(1);
-                // SAFETY: See the safety comment above.
-                unsafe {
-                    self.state.par_many_fold_init_unchecked_manual(
-                        init,
-                        self.world,
-                        &self.entity_list,
-                        batch_size,
-                        func,
-                        self.last_run,
-                        self.this_run,
-                    );
+            }
+            _ => {
+                let thread_count = bevy_tasks::ComputeTaskPool::get().thread_num();
+                if thread_count <= 1 {
+                    let init = init();
+                    // SAFETY: See the safety comment above.
+                    unsafe {
+                        self.state
+                            .query_unchecked_manual_with_ticks(self.world, self.last_run, self.this_run)
+                            .iter_many_inner(&self.entity_list)
+                            .fold(init, func);
+                    }
+                } else {
+                    // Need a batch size of at least 1.
+                    let batch_size = self.get_batch_size(thread_count).max(1);
+                    // SAFETY: See the safety comment above.
+                    unsafe {
+                        self.state.par_many_fold_init_unchecked_manual(
+                            init,
+                            self.world,
+                            &self.entity_list,
+                            batch_size,
+                            func,
+                            self.last_run,
+                            self.this_run,
+                        );
+                    }
                 }
             }
         }
     }
 
-    #[cfg(all(not(target_arch = "wasm32"), feature = "multi_threaded"))]
-    fn get_batch_size(&self, thread_count: usize) -> usize {
-        self.batching_strategy
-            .calc_batch_size(|| self.entity_list.len(), thread_count)
+    crate::cfg::multi_threaded! {
+        fn get_batch_size(&self, thread_count: usize) -> usize {
+            self.batching_strategy
+                .calc_batch_size(|| self.entity_list.len(), thread_count)
+        }
     }
 }
 
@@ -408,56 +410,57 @@ impl<'w, 's, D: QueryData, F: QueryFilter, E: EntityEquivalent + Sync>
             func(&mut init, item);
             init
         };
-        #[cfg(any(target_arch = "wasm32", not(feature = "multi_threaded")))]
-        {
-            let init = init();
-            // SAFETY:
-            // This method can only be called once per instance of QueryParManyUniqueIter,
-            // which ensures that mutable queries cannot be executed multiple times at once.
-            // Mutable instances of QueryParManyUniqueIter can only be created via an exclusive borrow of a
-            // Query or a World, which ensures that multiple aliasing QueryParManyUniqueIters cannot exist
-            // at the same time.
-            unsafe {
-                self.state
-                    .query_unchecked_manual_with_ticks(self.world, self.last_run, self.this_run)
-                    .iter_many_unique_inner(self.entity_list)
-                    .fold(init, func);
-            }
-        }
-        #[cfg(all(not(target_arch = "wasm32"), feature = "multi_threaded"))]
-        {
-            let thread_count = bevy_tasks::ComputeTaskPool::get().thread_num();
-            if thread_count <= 1 {
+        crate::cfg::switch! {
+            crate::cfg::single_threaded => {
                 let init = init();
-                // SAFETY: See the safety comment above.
+                // SAFETY:
+                // This method can only be called once per instance of QueryParManyUniqueIter,
+                // which ensures that mutable queries cannot be executed multiple times at once.
+                // Mutable instances of QueryParManyUniqueIter can only be created via an exclusive borrow of a
+                // Query or a World, which ensures that multiple aliasing QueryParManyUniqueIters cannot exist
+                // at the same time.
                 unsafe {
                     self.state
                         .query_unchecked_manual_with_ticks(self.world, self.last_run, self.this_run)
                         .iter_many_unique_inner(self.entity_list)
                         .fold(init, func);
                 }
-            } else {
-                // Need a batch size of at least 1.
-                let batch_size = self.get_batch_size(thread_count).max(1);
-                // SAFETY: See the safety comment above.
-                unsafe {
-                    self.state.par_many_unique_fold_init_unchecked_manual(
-                        init,
-                        self.world,
-                        &self.entity_list,
-                        batch_size,
-                        func,
-                        self.last_run,
-                        self.this_run,
-                    );
+            }
+            _ => {
+                let thread_count = bevy_tasks::ComputeTaskPool::get().thread_num();
+                if thread_count <= 1 {
+                    let init = init();
+                    // SAFETY: See the safety comment above.
+                    unsafe {
+                        self.state
+                            .query_unchecked_manual_with_ticks(self.world, self.last_run, self.this_run)
+                            .iter_many_unique_inner(self.entity_list)
+                            .fold(init, func);
+                    }
+                } else {
+                    // Need a batch size of at least 1.
+                    let batch_size = self.get_batch_size(thread_count).max(1);
+                    // SAFETY: See the safety comment above.
+                    unsafe {
+                        self.state.par_many_unique_fold_init_unchecked_manual(
+                            init,
+                            self.world,
+                            &self.entity_list,
+                            batch_size,
+                            func,
+                            self.last_run,
+                            self.this_run,
+                        );
+                    }
                 }
             }
         }
     }
 
-    #[cfg(all(not(target_arch = "wasm32"), feature = "multi_threaded"))]
-    fn get_batch_size(&self, thread_count: usize) -> usize {
-        self.batching_strategy
-            .calc_batch_size(|| self.entity_list.len(), thread_count)
+    crate::cfg::multi_threaded! {
+        fn get_batch_size(&self, thread_count: usize) -> usize {
+            self.batching_strategy
+                .calc_batch_size(|| self.entity_list.len(), thread_count)
+        }
     }
 }

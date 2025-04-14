@@ -1,9 +1,11 @@
-#[cfg(feature = "multi_threaded")]
-use bevy_ecs::event::EventMutParIter;
 use bevy_ecs::{
     event::{Event, EventCursor, EventMutIterator, EventMutIteratorWithId, Events},
     system::{Local, ResMut, SystemParam},
 };
+
+crate::cfg::multi_threaded! {
+    use bevy_ecs::event::EventMutParIter;
+}
 
 /// Mutably reads events of type `T` keeping track of which events have already been read
 /// by each system allowing multiple systems to read the same events. Ideal for chains of systems
@@ -61,44 +63,45 @@ impl<'w, 's, E: Event> EventMutator<'w, 's, E> {
         self.reader.read_mut_with_id(&mut self.events)
     }
 
-    /// Returns a parallel iterator over the events this [`EventMutator`] has not seen yet.
-    /// See also [`for_each`](super::EventParIter::for_each).
-    ///
-    /// # Example
-    /// ```
-    /// # use bevy_ecs::prelude::*;
-    /// # use std::sync::atomic::{AtomicUsize, Ordering};
-    ///
-    /// #[derive(Event)]
-    /// struct MyEvent {
-    ///     value: usize,
-    /// }
-    ///
-    /// #[derive(Resource, Default)]
-    /// struct Counter(AtomicUsize);
-    ///
-    /// // setup
-    /// let mut world = World::new();
-    /// world.init_resource::<Events<MyEvent>>();
-    /// world.insert_resource(Counter::default());
-    ///
-    /// let mut schedule = Schedule::default();
-    /// schedule.add_systems(|mut events: EventMutator<MyEvent>, counter: Res<Counter>| {
-    ///     events.par_read().for_each(|MyEvent { value }| {
-    ///         counter.0.fetch_add(*value, Ordering::Relaxed);
-    ///     });
-    /// });
-    /// for value in 0..100 {
-    ///     world.send_event(MyEvent { value });
-    /// }
-    /// schedule.run(&mut world);
-    /// let Counter(counter) = world.remove_resource::<Counter>().unwrap();
-    /// // all events were processed
-    /// assert_eq!(counter.into_inner(), 4950);
-    /// ```
-    #[cfg(feature = "multi_threaded")]
-    pub fn par_read(&mut self) -> EventMutParIter<'_, E> {
-        self.reader.par_read_mut(&mut self.events)
+    crate::cfg::multi_threaded! {
+        /// Returns a parallel iterator over the events this [`EventMutator`] has not seen yet.
+        /// See also [`for_each`](super::EventParIter::for_each).
+        ///
+        /// # Example
+        /// ```
+        /// # use bevy_ecs::prelude::*;
+        /// # use std::sync::atomic::{AtomicUsize, Ordering};
+        ///
+        /// #[derive(Event)]
+        /// struct MyEvent {
+        ///     value: usize,
+        /// }
+        ///
+        /// #[derive(Resource, Default)]
+        /// struct Counter(AtomicUsize);
+        ///
+        /// // setup
+        /// let mut world = World::new();
+        /// world.init_resource::<Events<MyEvent>>();
+        /// world.insert_resource(Counter::default());
+        ///
+        /// let mut schedule = Schedule::default();
+        /// schedule.add_systems(|mut events: EventMutator<MyEvent>, counter: Res<Counter>| {
+        ///     events.par_read().for_each(|MyEvent { value }| {
+        ///         counter.0.fetch_add(*value, Ordering::Relaxed);
+        ///     });
+        /// });
+        /// for value in 0..100 {
+        ///     world.send_event(MyEvent { value });
+        /// }
+        /// schedule.run(&mut world);
+        /// let Counter(counter) = world.remove_resource::<Counter>().unwrap();
+        /// // all events were processed
+        /// assert_eq!(counter.into_inner(), 4950);
+        /// ```
+        pub fn par_read(&mut self) -> EventMutParIter<'_, E> {
+            self.reader.par_read_mut(&mut self.events)
+        }
     }
 
     /// Determines the number of events available to be read from this [`EventMutator`] without consuming any.

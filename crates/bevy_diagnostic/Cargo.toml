@@ -32,18 +32,11 @@ sysinfo_plugin = ["sysinfo"]
 ## Allows access to the `std` crate. Enabling this feature will prevent compilation
 ## on `no_std` targets, but provides access to certain additional features on
 ## supported platforms.
-std = [
-  "serde?/std",
-  "bevy_ecs/std",
-  "bevy_app/std",
-  "bevy_platform/std",
-  "bevy_time/std",
-]
+std = ["serde?/std", "bevy_app/std", "bevy_platform/std", "bevy_time/std"]
 
 ## `critical-section` provides the building blocks for synchronization primitives
 ## on all platforms, including `no_std`.
 critical-section = [
-  "bevy_ecs/critical-section",
   "bevy_app/critical-section",
   "bevy_platform/critical-section",
   "bevy_time/critical-section",

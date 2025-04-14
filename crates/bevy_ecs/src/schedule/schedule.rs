@@ -217,12 +217,21 @@ impl Schedules {
 }
 
 fn make_executor(kind: ExecutorKind) -> Box<dyn SystemExecutor> {
-    match kind {
-        ExecutorKind::Simple => Box::new(SimpleExecutor::new()),
-        ExecutorKind::SingleThreaded => Box::new(SingleThreadedExecutor::new()),
-        #[cfg(feature = "std")]
-        ExecutorKind::MultiThreaded => Box::new(MultiThreadedExecutor::new()),
-    }
+    crate::cfg::switch! {{
+        crate::cfg::multi_threaded => {
+            match kind {
+                ExecutorKind::Simple => Box::new(SimpleExecutor::new()),
+                ExecutorKind::SingleThreaded => Box::new(SingleThreadedExecutor::new()),
+                ExecutorKind::MultiThreaded => Box::new(MultiThreadedExecutor::new()),
+            }
+        }
+        _ => {
+            match kind {
+                ExecutorKind::Simple => Box::new(SimpleExecutor::new()),
+                ExecutorKind::SingleThreaded => Box::new(SingleThreadedExecutor::new()),
+            }
+        }
+    }}
 }
 
 /// Chain systems into dependencies

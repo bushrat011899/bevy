@@ -9,7 +9,7 @@ license = "MIT OR Apache-2.0"
 keywords = ["bevy"]
 
 [features]
-default = ["std", "bevy_reflect", "bevy_ecs/async_executor", "smol_str"]
+default = ["std", "bevy_reflect", "smol_str"]
 
 # Functionality
 
@@ -38,13 +38,12 @@ smol_str = ["dep:smol_str", "bevy_reflect/smol_str"]
 ## Allows access to the `std` crate. Enabling this feature will prevent compilation
 ## on `no_std` targets, but provides access to certain additional features on
 ## supported platforms.
-std = ["bevy_app/std", "bevy_ecs/std", "bevy_platform/std"]
+std = ["bevy_app/std", "bevy_platform/std"]
 
 ## `critical-section` provides the building blocks for synchronization primitives
 ## on all platforms, including `no_std`.
 critical-section = [
   "bevy_app/critical-section",
-  "bevy_ecs/critical-section",
   "bevy_platform/critical-section",
 ]
 

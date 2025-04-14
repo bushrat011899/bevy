@@ -114,7 +114,6 @@ serialize = [
 multi_threaded = [
   "std",
   "bevy_asset?/multi_threaded",
-  "bevy_ecs/multi_threaded",
   "bevy_render?/multi_threaded",
   "bevy_tasks/multi_threaded",
 ]
@@ -274,11 +273,7 @@ bevy_state = ["dep:bevy_state"]
 track_location = ["bevy_ecs/track_location"]
 
 # Enable function reflection
-reflect_functions = [
-  "bevy_reflect/functions",
-  "bevy_app/reflect_functions",
-  "bevy_ecs/reflect_functions",
-]
+reflect_functions = ["bevy_reflect/functions", "bevy_app/reflect_functions"]
 
 # Enable documentation reflection
 reflect_documentation = ["bevy_reflect/documentation"]
@@ -299,7 +294,6 @@ std = [
   "bevy_a11y?/std",
   "bevy_app/std",
   "bevy_diagnostic/std",
-  "bevy_ecs/std",
   "bevy_input/std",
   "bevy_input_focus?/std",
   "bevy_log/std",
@@ -316,7 +310,6 @@ critical-section = [
   "bevy_a11y?/critical-section",
   "bevy_app/critical-section",
   "bevy_diagnostic/critical-section",
-  "bevy_ecs/critical-section",
   "bevy_input/critical-section",
   "bevy_input_focus?/critical-section",
   "bevy_platform/critical-section",
@@ -338,7 +331,6 @@ libm = [
 async_executor = [
   "std",
   "bevy_tasks/async_executor",
-  "bevy_ecs/async_executor",
   "bevy_transform/async_executor",
 ]
 

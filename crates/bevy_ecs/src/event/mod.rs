@@ -15,11 +15,7 @@ pub use base::{Event, EventId};
 pub use bevy_ecs_macros::Event;
 pub use collections::{Events, SendBatchIds};
 pub use event_cursor::EventCursor;
-#[cfg(feature = "multi_threaded")]
-pub use iterators::EventParIter;
 pub use iterators::{EventIterator, EventIteratorWithId};
-#[cfg(feature = "multi_threaded")]
-pub use mut_iterators::EventMutParIter;
 pub use mut_iterators::{EventMutIterator, EventMutIteratorWithId};
 pub use mutator::EventMutator;
 pub use reader::EventReader;
@@ -28,6 +24,11 @@ pub use update::{
     event_update_condition, event_update_system, signal_event_update_system, EventUpdates,
 };
 pub use writer::EventWriter;
+
+crate::cfg::multi_threaded! {
+    pub use mut_iterators::EventMutParIter;
+    pub use iterators::EventParIter;
+}
 
 #[cfg(test)]
 mod tests {
@@ -417,86 +418,86 @@ mod tests {
         assert!(!events.get_cursor().is_empty(&events));
     }
 
-    #[cfg(feature = "multi_threaded")]
-    #[test]
-    fn test_event_cursor_par_read() {
-        use crate::prelude::*;
-        use core::sync::atomic::{AtomicUsize, Ordering};
+    crate::cfg::multi_threaded! {
+        #[test]
+        fn test_event_cursor_par_read() {
+            use crate::prelude::*;
+            use core::sync::atomic::{AtomicUsize, Ordering};
 
-        #[derive(Resource)]
-        struct Counter(AtomicUsize);
+            #[derive(Resource)]
+            struct Counter(AtomicUsize);
 
-        let mut world = World::new();
-        world.init_resource::<Events<TestEvent>>();
-        for _ in 0..100 {
-            world.send_event(TestEvent { i: 1 });
+            let mut world = World::new();
+            world.init_resource::<Events<TestEvent>>();
+            for _ in 0..100 {
+                world.send_event(TestEvent { i: 1 });
+            }
+
+            let mut schedule = Schedule::default();
+
+            schedule.add_systems(
+                |mut cursor: Local<EventCursor<TestEvent>>,
+                events: Res<Events<TestEvent>>,
+                counter: ResMut<Counter>| {
+                    cursor.par_read(&events).for_each(|event| {
+                        counter.0.fetch_add(event.i, Ordering::Relaxed);
+                    });
+                },
+            );
+
+            world.insert_resource(Counter(AtomicUsize::new(0)));
+            schedule.run(&mut world);
+            let counter = world.remove_resource::<Counter>().unwrap();
+            assert_eq!(counter.0.into_inner(), 100);
+
+            world.insert_resource(Counter(AtomicUsize::new(0)));
+            schedule.run(&mut world);
+            let counter = world.remove_resource::<Counter>().unwrap();
+            assert_eq!(
+                counter.0.into_inner(),
+                0,
+                "par_read should have consumed events but didn't"
+            );
         }
 
-        let mut schedule = Schedule::default();
+        #[test]
+        fn test_event_cursor_par_read_mut() {
+            use crate::prelude::*;
+            use core::sync::atomic::{AtomicUsize, Ordering};
 
-        schedule.add_systems(
-            |mut cursor: Local<EventCursor<TestEvent>>,
-             events: Res<Events<TestEvent>>,
-             counter: ResMut<Counter>| {
-                cursor.par_read(&events).for_each(|event| {
-                    counter.0.fetch_add(event.i, Ordering::Relaxed);
-                });
-            },
-        );
+            #[derive(Resource)]
+            struct Counter(AtomicUsize);
 
-        world.insert_resource(Counter(AtomicUsize::new(0)));
-        schedule.run(&mut world);
-        let counter = world.remove_resource::<Counter>().unwrap();
-        assert_eq!(counter.0.into_inner(), 100);
+            let mut world = World::new();
+            world.init_resource::<Events<TestEvent>>();
+            for _ in 0..100 {
+                world.send_event(TestEvent { i: 1 });
+            }
+            let mut schedule = Schedule::default();
+            schedule.add_systems(
+                |mut cursor: Local<EventCursor<TestEvent>>,
+                mut events: ResMut<Events<TestEvent>>,
+                counter: ResMut<Counter>| {
+                    cursor.par_read_mut(&mut events).for_each(|event| {
+                        event.i += 1;
+                        counter.0.fetch_add(event.i, Ordering::Relaxed);
+                    });
+                },
+            );
+            world.insert_resource(Counter(AtomicUsize::new(0)));
+            schedule.run(&mut world);
+            let counter = world.remove_resource::<Counter>().unwrap();
+            assert_eq!(counter.0.into_inner(), 200, "Initial run failed");
 
-        world.insert_resource(Counter(AtomicUsize::new(0)));
-        schedule.run(&mut world);
-        let counter = world.remove_resource::<Counter>().unwrap();
-        assert_eq!(
-            counter.0.into_inner(),
-            0,
-            "par_read should have consumed events but didn't"
-        );
-    }
-
-    #[cfg(feature = "multi_threaded")]
-    #[test]
-    fn test_event_cursor_par_read_mut() {
-        use crate::prelude::*;
-        use core::sync::atomic::{AtomicUsize, Ordering};
-
-        #[derive(Resource)]
-        struct Counter(AtomicUsize);
-
-        let mut world = World::new();
-        world.init_resource::<Events<TestEvent>>();
-        for _ in 0..100 {
-            world.send_event(TestEvent { i: 1 });
+            world.insert_resource(Counter(AtomicUsize::new(0)));
+            schedule.run(&mut world);
+            let counter = world.remove_resource::<Counter>().unwrap();
+            assert_eq!(
+                counter.0.into_inner(),
+                0,
+                "par_read_mut should have consumed events but didn't"
+            );
         }
-        let mut schedule = Schedule::default();
-        schedule.add_systems(
-            |mut cursor: Local<EventCursor<TestEvent>>,
-             mut events: ResMut<Events<TestEvent>>,
-             counter: ResMut<Counter>| {
-                cursor.par_read_mut(&mut events).for_each(|event| {
-                    event.i += 1;
-                    counter.0.fetch_add(event.i, Ordering::Relaxed);
-                });
-            },
-        );
-        world.insert_resource(Counter(AtomicUsize::new(0)));
-        schedule.run(&mut world);
-        let counter = world.remove_resource::<Counter>().unwrap();
-        assert_eq!(counter.0.into_inner(), 200, "Initial run failed");
-
-        world.insert_resource(Counter(AtomicUsize::new(0)));
-        schedule.run(&mut world);
-        let counter = world.remove_resource::<Counter>().unwrap();
-        assert_eq!(
-            counter.0.into_inner(),
-            0,
-            "par_read_mut should have consumed events but didn't"
-        );
     }
 
     // Reader & Mutator

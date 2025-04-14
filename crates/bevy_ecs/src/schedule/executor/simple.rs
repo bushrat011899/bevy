@@ -4,8 +4,9 @@ use fixedbitset::FixedBitSet;
 #[cfg(feature = "trace")]
 use tracing::info_span;
 
-#[cfg(feature = "std")]
-use std::eprintln;
+crate::cfg::std! {
+    use std::eprintln;
+}
 
 use crate::{
     error::{default_error_handler, BevyError, ErrorContext},
@@ -131,18 +132,17 @@ impl SystemExecutor for SimpleExecutor {
                 }
             });
 
-            #[cfg(feature = "std")]
-            #[expect(clippy::print_stderr, reason = "Allowed behind `std` feature gate.")]
-            {
-                if let Err(payload) = std::panic::catch_unwind(f) {
-                    eprintln!("Encountered a panic in system `{}`!", &*system.name());
-                    std::panic::resume_unwind(payload);
+            crate::cfg::switch! {
+                crate::cfg::std => {
+                    #[expect(clippy::print_stderr, reason = "Allowed behind `std` feature gate.")]
+                    if let Err(payload) = std::panic::catch_unwind(f) {
+                        eprintln!("Encountered a panic in system `{}`!", &*system.name());
+                        std::panic::resume_unwind(payload);
+                    }
                 }
-            }
-
-            #[cfg(not(feature = "std"))]
-            {
-                (f)();
+                _ => {
+                    (f)();
+                }
             }
         }
 

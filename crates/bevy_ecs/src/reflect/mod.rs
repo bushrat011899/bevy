@@ -46,29 +46,28 @@ impl DerefMut for AppTypeRegistry {
     }
 }
 
-/// A [`Resource`] storing [`FunctionRegistry`] for
-/// function registrations relevant to a whole app.
-///
-/// [`FunctionRegistry`]: bevy_reflect::func::FunctionRegistry
-#[cfg(feature = "reflect_functions")]
-#[derive(Resource, Clone, Default)]
-pub struct AppFunctionRegistry(pub bevy_reflect::func::FunctionRegistryArc);
+crate::cfg::reflect_functions! {
+    /// A [`Resource`] storing [`FunctionRegistry`] for
+    /// function registrations relevant to a whole app.
+    ///
+    /// [`FunctionRegistry`]: bevy_reflect::func::FunctionRegistry
+    #[derive(Resource, Clone, Default)]
+    pub struct AppFunctionRegistry(pub bevy_reflect::func::FunctionRegistryArc);
 
-#[cfg(feature = "reflect_functions")]
-impl Deref for AppFunctionRegistry {
-    type Target = bevy_reflect::func::FunctionRegistryArc;
+    impl Deref for AppFunctionRegistry {
+        type Target = bevy_reflect::func::FunctionRegistryArc;
 
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.0
+        #[inline]
+        fn deref(&self) -> &Self::Target {
+            &self.0
+        }
     }
-}
 
-#[cfg(feature = "reflect_functions")]
-impl DerefMut for AppFunctionRegistry {
-    #[inline]
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
+    impl DerefMut for AppFunctionRegistry {
+        #[inline]
+        fn deref_mut(&mut self) -> &mut Self::Target {
+            &mut self.0
+        }
     }
 }
 

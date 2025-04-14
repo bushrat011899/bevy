@@ -21,7 +21,7 @@ tracing-tracy = ["tracing", "dep:tracing-tracy"]
 # Allows access to the `std` crate. Enabling this feature will prevent compilation
 # on `no_std` targets, but provides access to certain additional features on
 # supported platforms.
-std = ["bevy_app/std", "bevy_ecs/std"]
+std = ["bevy_app/std"]
 
 # Enables use of browser APIs.
 # Note this is currently only applicable on `wasm32` architectures.

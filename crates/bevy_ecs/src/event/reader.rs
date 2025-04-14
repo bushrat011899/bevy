@@ -1,9 +1,11 @@
-#[cfg(feature = "multi_threaded")]
-use bevy_ecs::event::EventParIter;
 use bevy_ecs::{
     event::{Event, EventCursor, EventIterator, EventIteratorWithId, Events},
     system::{Local, Res, SystemParam},
 };
+
+crate::cfg::multi_threaded! {
+    use bevy_ecs::event::EventParIter;
+}
 
 /// Reads events of type `T` in order and tracks which events have already been read.
 ///
@@ -33,44 +35,45 @@ impl<'w, 's, E: Event> EventReader<'w, 's, E> {
         self.reader.read_with_id(&self.events)
     }
 
-    /// Returns a parallel iterator over the events this [`EventReader`] has not seen yet.
-    /// See also [`for_each`](EventParIter::for_each).
-    ///
-    /// # Example
-    /// ```
-    /// # use bevy_ecs::prelude::*;
-    /// # use std::sync::atomic::{AtomicUsize, Ordering};
-    ///
-    /// #[derive(Event)]
-    /// struct MyEvent {
-    ///     value: usize,
-    /// }
-    ///
-    /// #[derive(Resource, Default)]
-    /// struct Counter(AtomicUsize);
-    ///
-    /// // setup
-    /// let mut world = World::new();
-    /// world.init_resource::<Events<MyEvent>>();
-    /// world.insert_resource(Counter::default());
-    ///
-    /// let mut schedule = Schedule::default();
-    /// schedule.add_systems(|mut events: EventReader<MyEvent>, counter: Res<Counter>| {
-    ///     events.par_read().for_each(|MyEvent { value }| {
-    ///         counter.0.fetch_add(*value, Ordering::Relaxed);
-    ///     });
-    /// });
-    /// for value in 0..100 {
-    ///     world.send_event(MyEvent { value });
-    /// }
-    /// schedule.run(&mut world);
-    /// let Counter(counter) = world.remove_resource::<Counter>().unwrap();
-    /// // all events were processed
-    /// assert_eq!(counter.into_inner(), 4950);
-    /// ```
-    #[cfg(feature = "multi_threaded")]
-    pub fn par_read(&mut self) -> EventParIter<'_, E> {
-        self.reader.par_read(&self.events)
+    crate::cfg::multi_threaded! {
+        /// Returns a parallel iterator over the events this [`EventReader`] has not seen yet.
+        /// See also [`for_each`](EventParIter::for_each).
+        ///
+        /// # Example
+        /// ```
+        /// # use bevy_ecs::prelude::*;
+        /// # use std::sync::atomic::{AtomicUsize, Ordering};
+        ///
+        /// #[derive(Event)]
+        /// struct MyEvent {
+        ///     value: usize,
+        /// }
+        ///
+        /// #[derive(Resource, Default)]
+        /// struct Counter(AtomicUsize);
+        ///
+        /// // setup
+        /// let mut world = World::new();
+        /// world.init_resource::<Events<MyEvent>>();
+        /// world.insert_resource(Counter::default());
+        ///
+        /// let mut schedule = Schedule::default();
+        /// schedule.add_systems(|mut events: EventReader<MyEvent>, counter: Res<Counter>| {
+        ///     events.par_read().for_each(|MyEvent { value }| {
+        ///         counter.0.fetch_add(*value, Ordering::Relaxed);
+        ///     });
+        /// });
+        /// for value in 0..100 {
+        ///     world.send_event(MyEvent { value });
+        /// }
+        /// schedule.run(&mut world);
+        /// let Counter(counter) = world.remove_resource::<Counter>().unwrap();
+        /// // all events were processed
+        /// assert_eq!(counter.into_inner(), 4950);
+        /// ```
+        pub fn par_read(&mut self) -> EventParIter<'_, E> {
+            self.reader.par_read(&self.events)
+        }
     }
 
     /// Determines the number of events available to be read from this [`EventReader`] without consuming any.
