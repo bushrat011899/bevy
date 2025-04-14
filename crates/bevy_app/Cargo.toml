@@ -42,18 +42,11 @@ error_panic_hook = []
 ## Allows access to the `std` crate. Enabling this feature will prevent compilation
 ## on `no_std` targets, but provides access to certain additional features on
 ## supported platforms.
-std = [
-  "bevy_ecs/std",
-  "dep:ctrlc",
-  "downcast-rs/std",
-  "bevy_tasks/std",
-  "bevy_platform/std",
-]
+std = ["bevy_ecs/std", "dep:ctrlc", "downcast-rs/std", "bevy_platform/std"]
 
 ## `critical-section` provides the building blocks for synchronization primitives
 ## on all platforms, including `no_std`.
 critical-section = [
-  "bevy_tasks/critical-section",
   "bevy_ecs/critical-section",
   "bevy_platform/critical-section",
 ]
@@ -62,7 +55,6 @@ critical-section = [
 ## Note this is currently only applicable on `wasm32` architectures.
 web = [
   "bevy_platform/web",
-  "bevy_tasks/web",
   "dep:wasm-bindgen",
   "dep:web-sys",
   "dep:console_error_panic_hook",

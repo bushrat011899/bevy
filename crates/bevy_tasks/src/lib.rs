@@ -6,28 +6,83 @@
 )]
 #![no_std]
 
-#[cfg(feature = "std")]
-extern crate std;
+/// Provides the state of features in this crate.
+pub mod cfg {
+    pub use bevy_platform::cfg::*;
 
-extern crate alloc;
-
-mod conditional_send {
-    cfg_if::cfg_if! {
-        if #[cfg(target_arch = "wasm32")] {
-            /// Use [`ConditionalSend`] to mark an optional Send trait bound. Useful as on certain platforms (eg. Wasm),
-            /// futures aren't Send.
-            pub trait ConditionalSend {}
-            impl<T> ConditionalSend for T {}
-        } else {
-            /// Use [`ConditionalSend`] to mark an optional Send trait bound. Useful as on certain platforms (eg. Wasm),
-            /// futures aren't Send.
-            pub trait ConditionalSend: Send {}
-            impl<T: Send> ConditionalSend for T {}
+    define_alias! {
+        all(
+            not(target_arch = "wasm32"),
+            feature = "multi_threaded",
+            any(
+                feature = "futures-lite-block-on",
+                feature = "async-io"
+            )
+        ) => {
+            /// Enables multi-threading support.
+            /// Without this feature, all tasks will be run on a single thread.
+            multi_threaded
+        }
+        not(all(
+            not(target_arch = "wasm32"),
+            feature = "multi_threaded",
+            any(
+                feature = "futures-lite-block-on",
+                feature = "async-io"
+            )
+        )) => {
+            /// Compiling in single-threaded mode.
+            single_threaded
+        }
+        feature = "async_executor" => {
+            /// Uses `async-executor` as a task execution backend.
+            /// This backend is incompatible with `no_std` targets.
+            async_executor
+        }
+        feature = "async-io" => {
+            /// Uses `async-io` for asynchronous IO integration.
+            async_io
+        }
+        feature = "futures-lite-block-on" => {
+            /// Re-exports the `block_on` function from `futures-lite` if `async-io` is not enabled.
+            futures_lite_block_on
+        }
+        not(feature = "async_executor") => {
+            /// Uses an internal fork of `edge-executor` as the execution backend.
+            /// This backend is compatible with `no_std` targets.
+            edge_executor
+        }
+        any(feature = "futures-lite-block-on", feature = "async-io") => {
+            /// Provides an implementation for `block_on`.
+            block_on
+        }
+        all(target_arch = "wasm32", feature = "web-event-loop") => {
+            /// Integrates with the web browser event loop for ticking pending tasks.
+            web_event_loop
         }
     }
 }
 
-pub use conditional_send::*;
+cfg::std! {
+    extern crate std;
+}
+
+extern crate alloc;
+
+cfg::switch! {
+    #[cfg(target_arch = "wasm32")] => {
+        /// Use [`ConditionalSend`] to mark an optional Send trait bound. Useful as on certain platforms (eg. Wasm),
+        /// futures aren't Send.
+        pub trait ConditionalSend {}
+        impl<T> ConditionalSend for T {}
+    }
+    _ => {
+        /// Use [`ConditionalSend`] to mark an optional Send trait bound. Useful as on certain platforms (eg. Wasm),
+        /// futures aren't Send.
+        pub trait ConditionalSend: Send {}
+        impl<T: Send> ConditionalSend for T {}
+    }
+}
 
 /// Use [`ConditionalSendFuture`] for a future with an optional Send trait bound, as on certain platforms (eg. Wasm),
 /// futures aren't Send.
@@ -41,27 +96,35 @@ pub type BoxedFuture<'a, T> = core::pin::Pin<Box<dyn ConditionalSendFuture<Outpu
 
 pub mod futures;
 
-#[cfg(not(feature = "async_executor"))]
-mod edge_executor;
+cfg::edge_executor! {
+    mod edge_executor;
+}
 
 mod executor;
 
 mod slice;
 pub use slice::{ParallelSlice, ParallelSliceMut};
 
-#[cfg_attr(all(target_arch = "wasm32", feature = "web"), path = "wasm_task.rs")]
-mod task;
+cfg::switch! {
+    cfg::web_event_loop => {
+        mod wasm_task as task;
+    }
+    _ => {
+        mod task;
+    }
+}
 
 pub use task::Task;
 
-cfg_if::cfg_if! {
-    if #[cfg(all(not(target_arch = "wasm32"), feature = "multi_threaded"))] {
+cfg::switch! {
+    cfg::multi_threaded => {
         mod task_pool;
         mod thread_executor;
 
         pub use task_pool::{Scope, TaskPool, TaskPoolBuilder};
         pub use thread_executor::{ThreadExecutor, ThreadExecutorTicker};
-    } else if #[cfg(any(target_arch = "wasm32", not(feature = "multi_threaded")))] {
+    }
+    _ => {
         mod single_threaded_task_pool;
 
         pub use single_threaded_task_pool::{Scope, TaskPool, TaskPoolBuilder, ThreadExecutor};
@@ -70,16 +133,15 @@ cfg_if::cfg_if! {
 
 mod usages;
 pub use futures_lite::future::poll_once;
-pub use usages::{AsyncComputeTaskPool, ComputeTaskPool, IoTaskPool};
+pub use usages::{
+    tick_global_task_pools_on_main_thread, AsyncComputeTaskPool, ComputeTaskPool, IoTaskPool,
+};
 
-#[cfg(not(all(target_arch = "wasm32", feature = "web")))]
-pub use usages::tick_global_task_pools_on_main_thread;
-
-#[cfg(feature = "std")]
-cfg_if::cfg_if! {
-    if #[cfg(feature = "async-io")] {
+cfg::switch! {
+    cfg::async_io => {
         pub use async_io::block_on;
-    } else {
+    }
+    cfg::futures_lite_block_on => {
         pub use futures_lite::future::block_on;
     }
 }
@@ -100,13 +162,14 @@ pub mod prelude {
         usages::{AsyncComputeTaskPool, ComputeTaskPool, IoTaskPool},
     };
 
-    #[cfg(feature = "std")]
-    #[doc(hidden)]
-    pub use crate::block_on;
+    crate::cfg::block_on! {
+        #[doc(hidden)]
+        pub use crate::block_on;
+    }
 }
 
-cfg_if::cfg_if! {
-    if #[cfg(feature = "std")] {
+cfg::switch! {
+    cfg::std => {
         use core::num::NonZero;
 
         /// Gets the logical CPU core count available to the current process.
@@ -120,7 +183,8 @@ cfg_if::cfg_if! {
                 .map(NonZero::<usize>::get)
                 .unwrap_or(1)
         }
-    } else {
+    }
+    _ => {
         /// Gets the logical CPU core count available to the current process.
         ///
         /// This will always return at least 1.

@@ -75,18 +75,13 @@ std = [
   "bevy_log?/std",
   "bevy_log?/tracing",
   "bevy_ecs?/std",
-  "bevy_tasks/std",
   "bevy_utils",
   "serde?/std",
 ]
 
 ## `critical-section` provides the building blocks for synchronization primitives
 ## on all platforms, including `no_std`.
-critical-section = [
-  "bevy_app?/critical-section",
-  "bevy_ecs?/critical-section",
-  "bevy_tasks/critical-section",
-]
+critical-section = ["bevy_app?/critical-section", "bevy_ecs?/critical-section"]
 
 ## Allows access to the `alloc` crate.
 alloc = ["serde?/alloc"]
