@@ -35,7 +35,6 @@ serialize = [
 ## on `no_std` targets, but provides access to certain additional features on
 ## supported platforms.
 std = [
-  "bevy_app/std",
   "bevy_input/std",
   "serde?/std",
   "raw-window-handle/std",

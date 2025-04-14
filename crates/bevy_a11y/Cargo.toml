@@ -28,11 +28,11 @@ serialize = ["dep:serde", "bevy_ecs/serialize", "accesskit/serde"]
 ## Allows access to the `std` crate. Enabling this feature will prevent compilation
 ## on `no_std` targets, but provides access to certain additional features on
 ## supported platforms.
-std = ["bevy_app/std"]
+std = []
 
 ## `critical-section` provides the building blocks for synchronization primitives
 ## on all platforms, including `no_std`.
-critical-section = ["bevy_app/critical-section"]
+critical-section = []
 
 [dependencies]
 # bevy

@@ -228,10 +228,7 @@ file_watcher = ["bevy_asset?/file_watcher"]
 embedded_watcher = ["bevy_asset?/embedded_watcher"]
 
 # Enable system stepping support
-bevy_debug_stepping = [
-  "bevy_ecs/bevy_debug_stepping",
-  "bevy_app/bevy_debug_stepping",
-]
+bevy_debug_stepping = ["bevy_ecs/bevy_debug_stepping"]
 
 # Enables the meshlet renderer for dense high-poly scenes (experimental)
 meshlet = ["bevy_pbr?/meshlet"]
@@ -273,7 +270,7 @@ bevy_state = ["dep:bevy_state"]
 track_location = ["bevy_ecs/track_location"]
 
 # Enable function reflection
-reflect_functions = ["bevy_reflect/functions", "bevy_app/reflect_functions"]
+reflect_functions = ["bevy_reflect/functions"]
 
 # Enable documentation reflection
 reflect_documentation = ["bevy_reflect/documentation"]
@@ -292,7 +289,6 @@ configurable_error_handler = ["bevy_ecs/configurable_error_handler"]
 # supported platforms.
 std = [
   "bevy_a11y?/std",
-  "bevy_app/std",
   "bevy_diagnostic/std",
   "bevy_input/std",
   "bevy_input_focus?/std",
@@ -308,7 +304,6 @@ std = [
 # on all platforms, including `no_std`.
 critical-section = [
   "bevy_a11y?/critical-section",
-  "bevy_app/critical-section",
   "bevy_diagnostic/critical-section",
   "bevy_input/critical-section",
   "bevy_input_focus?/critical-section",

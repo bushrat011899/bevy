@@ -9,15 +9,21 @@ license = "MIT OR Apache-2.0"
 keywords = ["bevy"]
 
 [features]
-default = ["std", "bevy_reflect", "bevy_ecs/default", "error_panic_hook"]
+default = [
+  "bevy_platform/default",
+  "bevy_reflect",
+  "bevy_ecs/default",
+  "error_panic_hook",
+]
 
 # Functionality
 
 ## Adds runtime reflection support using `bevy_reflect`.
 bevy_reflect = ["dep:bevy_reflect", "bevy_ecs/bevy_reflect"]
 
-## Extends reflection support to functions.
-reflect_functions = ["bevy_reflect", "bevy_reflect/functions"]
+## Integrates with a Ctrl-C signal sent in the terminal.
+## Only applicable on Windows and Unix platforms.
+ctrl_c = ["dep:ctrlc"]
 
 # Debugging Features
 
@@ -25,33 +31,18 @@ reflect_functions = ["bevy_reflect", "bevy_reflect/functions"]
 ## through that framework.
 trace = ["dep:tracing"]
 
-## Provides system stepping support, allowing them to be paused, stepped, and
-## other debug operations which can help with diagnosing certain behaviors.
-bevy_debug_stepping = []
-
 ## Will set the BevyError panic hook, which gives cleaner filtered backtraces when
 ## a BevyError is hit.
 error_panic_hook = []
 
+## Integrates with web browser APIs to forward panics to the console logger.
+web_panic_hook = ["bevy_platform/web", "dep:console_error_panic_hook"]
+
 # Platform Compatibility
-
-## Allows access to the `std` crate. Enabling this feature will prevent compilation
-## on `no_std` targets, but provides access to certain additional features on
-## supported platforms.
-std = ["dep:ctrlc", "downcast-rs/std", "bevy_platform/std"]
-
-## `critical-section` provides the building blocks for synchronization primitives
-## on all platforms, including `no_std`.
-critical-section = ["bevy_platform/critical-section"]
 
 ## Enables use of browser APIs.
 ## Note this is currently only applicable on `wasm32` architectures.
-web = [
-  "bevy_platform/web",
-  "dep:wasm-bindgen",
-  "dep:web-sys",
-  "dep:console_error_panic_hook",
-]
+web = ["bevy_platform/web", "dep:wasm-bindgen", "dep:web-sys"]
 
 [dependencies]
 # bevy

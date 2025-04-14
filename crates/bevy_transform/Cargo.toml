@@ -70,7 +70,6 @@ async_executor = ["std", "bevy_tasks/async_executor"]
 ## supported platforms.
 std = [
   "alloc",
-  "bevy_app?/std",
   "bevy_log",
   "bevy_log?/std",
   "bevy_log?/tracing",
@@ -80,7 +79,7 @@ std = [
 
 ## `critical-section` provides the building blocks for synchronization primitives
 ## on all platforms, including `no_std`.
-critical-section = ["bevy_app?/critical-section"]
+critical-section = []
 
 ## Allows access to the `alloc` crate.
 alloc = ["serde?/alloc"]

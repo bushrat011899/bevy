@@ -6,8 +6,8 @@ use bevy_tasks::{AsyncComputeTaskPool, ComputeTaskPool, IoTaskPool, TaskPoolBuil
 use core::fmt::Debug;
 use log::trace;
 
-cfg_if::cfg_if! {
-    if #[cfg(not(all(target_arch = "wasm32", feature = "web")))] {
+crate::cfg::web! {
+    if {} else {
         use {crate::Last, bevy_tasks::tick_global_task_pools_on_main_thread};
         use bevy_ecs::system::NonSendMarker;
 
@@ -33,8 +33,11 @@ impl Plugin for TaskPoolPlugin {
         // Setup the default bevy task pools
         self.task_pool_options.create_default_pools();
 
-        #[cfg(not(all(target_arch = "wasm32", feature = "web")))]
-        _app.add_systems(Last, tick_global_task_pools);
+        crate::cfg::web! {
+            if {} else {
+                _app.add_systems(Last, tick_global_task_pools);
+            }
+        }
     }
 }
 
@@ -178,17 +181,20 @@ impl TaskPoolOptions {
                     .num_threads(io_threads)
                     .thread_name("IO Task Pool".to_string());
 
-                #[cfg(not(all(target_arch = "wasm32", feature = "web")))]
-                let builder = {
-                    let mut builder = builder;
-                    if let Some(f) = self.io.on_thread_spawn.clone() {
-                        builder = builder.on_thread_spawn(move || f());
+                crate::cfg::web! {
+                    if {} else {
+                        let builder = {
+                            let mut builder = builder;
+                            if let Some(f) = self.io.on_thread_spawn.clone() {
+                                builder = builder.on_thread_spawn(move || f());
+                            }
+                            if let Some(f) = self.io.on_thread_destroy.clone() {
+                                builder = builder.on_thread_destroy(move || f());
+                            }
+                            builder
+                        };
                     }
-                    if let Some(f) = self.io.on_thread_destroy.clone() {
-                        builder = builder.on_thread_destroy(move || f());
-                    }
-                    builder
-                };
+                }
 
                 builder.build()
             });
@@ -208,17 +214,20 @@ impl TaskPoolOptions {
                     .num_threads(async_compute_threads)
                     .thread_name("Async Compute Task Pool".to_string());
 
-                #[cfg(not(all(target_arch = "wasm32", feature = "web")))]
-                let builder = {
-                    let mut builder = builder;
-                    if let Some(f) = self.async_compute.on_thread_spawn.clone() {
-                        builder = builder.on_thread_spawn(move || f());
+                crate::cfg::web! {
+                    if {} else {
+                        let builder = {
+                            let mut builder = builder;
+                            if let Some(f) = self.async_compute.on_thread_spawn.clone() {
+                                builder = builder.on_thread_spawn(move || f());
+                            }
+                            if let Some(f) = self.async_compute.on_thread_destroy.clone() {
+                                builder = builder.on_thread_destroy(move || f());
+                            }
+                            builder
+                        };
                     }
-                    if let Some(f) = self.async_compute.on_thread_destroy.clone() {
-                        builder = builder.on_thread_destroy(move || f());
-                    }
-                    builder
-                };
+                }
 
                 builder.build()
             });
@@ -238,17 +247,20 @@ impl TaskPoolOptions {
                     .num_threads(compute_threads)
                     .thread_name("Compute Task Pool".to_string());
 
-                #[cfg(not(all(target_arch = "wasm32", feature = "web")))]
-                let builder = {
-                    let mut builder = builder;
-                    if let Some(f) = self.compute.on_thread_spawn.clone() {
-                        builder = builder.on_thread_spawn(move || f());
+                crate::cfg::web! {
+                    if {} else {
+                        let builder = {
+                            let mut builder = builder;
+                            if let Some(f) = self.compute.on_thread_spawn.clone() {
+                                builder = builder.on_thread_spawn(move || f());
+                            }
+                            if let Some(f) = self.compute.on_thread_destroy.clone() {
+                                builder = builder.on_thread_destroy(move || f());
+                            }
+                            builder
+                        };
                     }
-                    if let Some(f) = self.compute.on_thread_destroy.clone() {
-                        builder = builder.on_thread_destroy(move || f());
-                    }
-                    builder
-                };
+                }
 
                 builder.build()
             });
